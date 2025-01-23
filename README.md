@@ -1,6 +1,6 @@
 My groupmembers are:
 - Yassine Bihi
-- XXXX
+- Diego Rivera
 - XXXX
 - XXXX
 
