@@ -1,5 +1,7 @@
-package com.jydoc.deliverable3.Controller;
+//This controller "listens" for user responses.
 
+
+package com.jydoc.deliverable3.Controller;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,7 +37,7 @@ public class indexController {
 
     @PostMapping("/login")
     public String handleLogin(@RequestParam String username, @RequestParam String password, Model model) {
-        // Here, you would usually authenticate the user using the Security package, for now we just show the data
+        //TODO: Implement User authentication
         model.addAttribute("username", username);
         model.addAttribute("password", password);
 

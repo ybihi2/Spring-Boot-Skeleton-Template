@@ -1,3 +1,6 @@
+//The User Model is used to interact and create the database
+
+
 package com.jydoc.deliverable3.Model;
 import jakarta.persistence.*;
 import jakarta.persistence.Entity;

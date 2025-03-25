@@ -1,6 +1,6 @@
 // This DTO accepts user input to fill variables, then is converted by
 // UserService into a UserModel.
-
+// Also used for business logic.
 package com.jydoc.deliverable3.DTO;
 import lombok.Data;
 
