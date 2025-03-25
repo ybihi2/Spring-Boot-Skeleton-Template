@@ -1,5 +1,5 @@
 //This controller "listens" for user responses.
-
+//TODO: We need to figure out how to set the user input into a DTO, then convert to Model and add into database
 
 package com.jydoc.deliverable3.Controller;
 import org.springframework.stereotype.Controller;

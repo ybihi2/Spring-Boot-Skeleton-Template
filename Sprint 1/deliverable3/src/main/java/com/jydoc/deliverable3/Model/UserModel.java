@@ -16,7 +16,7 @@ import lombok.Setter;
 @NoArgsConstructor
 
 public class UserModel {
-
+//Each row in the database is a unique user containing all of these columns
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name="user-id")
