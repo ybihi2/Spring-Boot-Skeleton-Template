@@ -43,4 +43,12 @@ public class indexController {
 
         return "loginSuccess";
     }
+
+    @GetMapping("/register")
+    public String register(Model model) {
+        //TODO: Implement registration system
+
+
+        return "register";
+    }
 }
