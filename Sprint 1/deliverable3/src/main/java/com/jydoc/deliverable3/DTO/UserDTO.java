@@ -2,15 +2,35 @@
 // UserService into a UserModel.
 // Also used for business logic.
 package com.jydoc.deliverable3.DTO;
+
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
-@Data public class UserDTO {      //@Data automatically applies all Getters, Setters, NoArgConstructor, and ArgConstructor
+@Data
+public class UserDTO {  //@Data applies Getters, Setters, NoArgsConstructor, and AllArgsConstructor
 
     private int id;
     private boolean admin;
-    private String email;
-    private String password;
-    private String firstName;
-    private String lastName;
 
+    @NotBlank(message = "Email cannot be empty")
+    @Email(message = "Invalid email format")
+    private String email;
+
+    @NotBlank(message = "Password cannot be empty")
+    @Size(min = 6, message = "Password must be at least 6 characters")
+    @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d).{6,}$", 
+             message = "Password must contain at least one letter and one number")
+    private String password;
+
+    @NotBlank(message = "First name cannot be empty")
+    @Size(min = 2, max = 30, message = "First name must be between 2 and 30 characters")
+    private String firstName;
+
+    @NotBlank(message = "Last name cannot be empty")
+    @Size(min = 2, max = 30, message = "Last name must be between 2 and 30 characters")
+    private String lastName;
 }
+
