@@ -48,4 +48,12 @@ public class indexController {
             return "login"; // Return back to login page with error message
         }
     }
+
+    @GetMapping("/register")
+    public String register(Model model) {
+        //TODO: Implement registration system
+
+
+        return "register";
+    }
 }
