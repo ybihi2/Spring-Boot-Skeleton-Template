@@ -30,17 +30,22 @@ public class indexController {
         return "index";
     }
 
-    @GetMapping("/login")
+@GetMapping("/login")
     public String login(Model model) {
+        model.addAttribute("userDTO", new UserDTO());
         return "login";
     }
 
     @PostMapping("/login")
-    public String handleLogin(@RequestParam String username, @RequestParam String password, Model model) {
-        //TODO: Implement User authentication
-        model.addAttribute("username", username);
-        model.addAttribute("password", password);
+    public String handleLogin(@Valid @ModelAttribute("userDTO") UserDTO userDTO, Model model) {
+        boolean isAuthenticated = userService.authenticate(userDTO.getEmail(), userDTO.getPassword());
 
-        return "loginSuccess";
+        if (isAuthenticated) {
+            model.addAttribute("username", userDTO.getEmail());
+            return "loginSuccess";
+        } else {
+            model.addAttribute("error", "Invalid email or password");
+            return "login"; // Return back to login page with error message
+        }
     }
 }
