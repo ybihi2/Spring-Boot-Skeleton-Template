@@ -38,26 +38,26 @@ class Deliverable3ApplicationTests {
         // Test first name too short
         user.setFirstName("A");
         Set<ConstraintViolation<UserModel>> violations = validator.validate(user);
-        assertFalse(violations.isEmpty(), "First name less than 2 characters should fail");
+        assertFalse(violations.isEmpty(), "First name less than 2 characters are invalid.");
 
         // Test first name too long
         user.setFirstName("ThisIsAVeryLongFirstNameThatExceedsFiftyCharactersLimit");
         violations = validator.validate(user);
-        assertFalse(violations.isEmpty(), "First name over 50 characters should fail");
+        assertFalse(violations.isEmpty(), "First name over 50 characters are invalid.");
 
         // Test first name with invalid characters
         user.setFirstName("John123");
         violations = validator.validate(user);
-        assertFalse(violations.isEmpty(), "First name with numbers should fail");
+        assertFalse(violations.isEmpty(), "First name with numbers are invalid.");
 
         // Test first name with allowed special characters
         user.setFirstName("Mary-Jane");
         violations = validator.validate(user);
-        assertTrue(violations.isEmpty(), "First name with hyphen should be valid");
+        assertTrue(violations.isEmpty(), "First names with a hyphen are valid.");
 
         user.setFirstName("O'Brien");
         violations = validator.validate(user);
-        assertTrue(violations.isEmpty(), "First name with apostrophe should be valid");
+        assertTrue(violations.isEmpty(), "First name with apostrophe should be valid.");
     }
 
     @Test
@@ -67,22 +67,22 @@ class Deliverable3ApplicationTests {
         // Test last name too short
         user.setLastName("A");
         Set<ConstraintViolation<UserModel>> violations = validator.validate(user);
-        assertFalse(violations.isEmpty(), "Last name less than 2 characters should fail");
+        assertFalse(violations.isEmpty(), "Last name less than 2 characters are invalid.");
 
         // Test last name too long
         user.setLastName("ThisIsAVeryLongLastNameThatExceedsFiftyCharactersLimit");
         violations = validator.validate(user);
-        assertFalse(violations.isEmpty(), "Last name over 50 characters should fail");
+        assertFalse(violations.isEmpty(), "Last name over 50 characters are invalid.");
 
         // Test last name with invalid characters
         user.setLastName("Smith123");
         violations = validator.validate(user);
-        assertFalse(violations.isEmpty(), "Last name with numbers should fail");
+        assertFalse(violations.isEmpty(), "Last name with numbers are invalid.");
 
         // Test last name with allowed special characters
         user.setLastName("Van-Helsing");
         violations = validator.validate(user);
-        assertTrue(violations.isEmpty(), "Last name with hyphen should be valid");
+        assertTrue(violations.isEmpty(), "Last name with a hyphen should be valid.");
     }
 
     @Test
@@ -92,7 +92,7 @@ class Deliverable3ApplicationTests {
         // Test blank email
         user.setEmail("");
         Set<ConstraintViolation<UserModel>> violations = validator.validate(user);
-        assertFalse(violations.isEmpty(), "Blank email should fail");
+        assertFalse(violations.isEmpty(), "A blank email is invalid.");
 
         // Test invalid email formats
         String[] invalidEmails = {
@@ -106,13 +106,13 @@ class Deliverable3ApplicationTests {
         for (String email : invalidEmails) {
             user.setEmail(email);
             violations = validator.validate(user);
-            assertFalse(violations.isEmpty(), "Invalid email format should fail: " + email);
+            assertFalse(violations.isEmpty(), "Invalid email format: " + email);
         }
 
         // Test valid email
         user.setEmail("valid.email123@example.com");
         violations = validator.validate(user);
-        assertTrue(violations.isEmpty(), "Valid email should pass");
+        assertTrue(violations.isEmpty(), "Valid email should pass.");
     }
 
     @Test
@@ -122,22 +122,22 @@ class Deliverable3ApplicationTests {
         // Test password too short
         user.setPassword("12");
         Set<ConstraintViolation<UserModel>> violations = validator.validate(user);
-        assertFalse(violations.isEmpty(), "Password less than 6 characters should fail");
+        assertFalse(violations.isEmpty(), "Passwords less than 6 characters are invalid.");
 
         // Test password without letters
         user.setPassword("123456");
         violations = validator.validate(user);
-        assertFalse(violations.isEmpty(), "Password without letters should fail");
+        assertFalse(violations.isEmpty(), "Passwords without letters are invalid.");
 
         // Test password without numbers
         user.setPassword("password");
         violations = validator.validate(user);
-        assertFalse(violations.isEmpty(), "Password without numbers should fail");
+        assertFalse(violations.isEmpty(), "Passwords without numbers are invalid.l");
 
         // Test valid password
         user.setPassword("password123");
         violations = validator.validate(user);
-        assertTrue(violations.isEmpty(), "Valid password should pass");
+        assertTrue(violations.isEmpty(), "Valid passwords will pass.");
     }
 
     @Test
@@ -157,8 +157,8 @@ class Deliverable3ApplicationTests {
         regularUser.setAdmin(false);
 
         // Verify admin flag can be set correctly
-        assertTrue(adminUser.isAdmin(), "Admin flag should be settable to true");
-        assertFalse(regularUser.isAdmin(), "Admin flag should be settable to false");
+        assertTrue(adminUser.isAdmin(), "Admin flag should be settable to true.");
+        assertFalse(regularUser.isAdmin(), "Admin flag should be settable to false.");
     }
 }
 
