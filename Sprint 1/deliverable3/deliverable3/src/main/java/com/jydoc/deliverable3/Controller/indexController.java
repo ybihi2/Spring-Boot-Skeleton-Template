@@ -56,7 +56,7 @@ public class indexController {
         boolean isAuthenticated = UserService.authenticate(userDTO.getEmail(), userDTO.getPassword());
 
         if (isAuthenticated) {
-            model.addAttribute("username", userDTO.getEmail());
+            model.addAttribute("email", userDTO.getEmail());
             return "loginSuccess";
         } else {
             model.addAttribute("error", "Invalid email or password");
