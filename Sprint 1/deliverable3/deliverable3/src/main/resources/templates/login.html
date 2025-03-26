@@ -3,21 +3,36 @@
 <head>
   <meta charset="UTF-8">
   <title>Login</title>
+  <style>
+    .error { color: red; }
+    .error-border { border: 1px solid red; }
+  </style>
 </head>
 <body>
 <h1>Login</h1>
-<form th:action="@{/login}" method="post">
+
+<!-- Display general error message if login fails -->
+<p th:if="${error}" class="error" th:text="${error}"></p>
+
+<form th:action="@{/login}" method="post" th:object="${userDTO}">
   <div>
-    <label for="username">Username:</label>
-    <input type="text" id="username" name="username" required/>
+    <label for="email">Email:</label>
+    <input type="email" id="email" th:field="*{email}" required
+           th:class="${#fields.hasErrors('email')} ? 'error-border' : ''"/>
+    <span th:if="${#fields.hasErrors('email')}" th:errors="*{email}" class="error"></span>
   </div>
+
   <div>
     <label for="password">Password:</label>
-    <input type="password" id="password" name="password" required/>
+    <input type="password" id="password" th:field="*{password}" required
+           th:class="${#fields.hasErrors('password')} ? 'error-border' : ''"/>
+    <span th:if="${#fields.hasErrors('password')}" th:errors="*{password}" class="error"></span>
   </div>
+
   <div>
     <button type="submit">Login</button>
   </div>
 </form>
+
 </body>
 </html>
