@@ -51,17 +51,12 @@ public class indexController {
     @PostMapping("/login")
     public String handleLogin(@Valid @ModelAttribute("userDTO") UserDTO userDTO, Model model) {
 
-        //TODO: Needs to be fixed
-        UserService UserService = new UserService();
-        boolean isAuthenticated = UserService.authenticate(userDTO.getEmail(), userDTO.getPassword());
+        if (!isAuthenticated) {
+        model.addAttribute("error", "Invalid email or password");
+        return "login"; // Return to the login page and show an error message
+    }
 
-        if (isAuthenticated) {
-            model.addAttribute("email", userDTO.getEmail());
-            return "loginSuccess";
-        } else {
-            model.addAttribute("error", "Invalid email or password");
-            return "login"; // Return back to login page with error message
-        }
+    return "redirect:/dashboard";
     }
 
     @GetMapping("/register")
