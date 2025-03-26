@@ -7,14 +7,14 @@ import com.jydoc.deliverable3.Model.UserModel;
 import com.jydoc.deliverable3.Repository.UserRepository;
 import com.jydoc.deliverable3.Service.UserService;
 import jakarta.validation.Valid;
-import org.antlr.v4.runtime.misc.LogManager;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+
 
 import java.time.LocalDate;
 
@@ -50,6 +50,8 @@ public class indexController {
 
     @PostMapping("/login")
     public String handleLogin(@Valid @ModelAttribute("userDTO") UserDTO userDTO, Model model) {
+
+        //TODO: Needs to be fixed
         UserService UserService = new UserService();
         boolean isAuthenticated = UserService.authenticate(userDTO.getEmail(), userDTO.getPassword());
 
@@ -71,17 +73,22 @@ public class indexController {
     @PostMapping("/register")
     public String registerUser(@ModelAttribute("user") UserDTO userDTO, BindingResult result, Model model) {
         //TODO: Implement registration system
+
         if (result.hasErrors()) {
             return "register"; // TODO: Implement register error to bring popup then refresh
         }
+        else {
+            UserModel user = new UserModel();
+            user.setEmail(userDTO.getEmail());
+            user.setPassword(userDTO.getPassword());
+            user.setFirstName(userDTO.getFirstName()); //TODO: Transfer to Service package
+            user.setLastName(userDTO.getLastName());
+            userRepository.save(user);
+            return "redirect:/";
+        }
 
-        UserModel user = new UserModel();
-        user.setEmail(userDTO.getEmail());
-        user.setPassword(userDTO.getPassword());
-        user.setFirstName(userDTO.getFirstName()); //TODO: Transfer to Service package
-        user.setLastName(userDTO.getLastName());
-        userRepository.save(user);
 
-        return "redirect:/index";
+
+
     }
 }
