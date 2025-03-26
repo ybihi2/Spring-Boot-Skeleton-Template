@@ -9,7 +9,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
-
+//TODO: Authentication needs to be fixed here
 @Data
 public class UserDTO {  //@Data applies Getters, Setters, NoArgsConstructor, and AllArgsConstructor
 
@@ -27,11 +27,12 @@ public class UserDTO {  //@Data applies Getters, Setters, NoArgsConstructor, and
     private String password;
 
     @NotBlank(message = "First name cannot be empty")
+    @Pattern(regexp = "^[\\p{L}'-]+$", message = "First name can only contain letters, hyphens, and apostrophes")
     @Size(min = 2, max = 30, message = "First name must be between 2 and 30 characters")
     private String firstName;
 
     @NotBlank(message = "Last name cannot be empty")
+    @Pattern(regexp = "^[\\p{L}'-]+$", message = "Last name can only contain letters, hyphens, and apostrophes")
     @Size(min = 2, max = 30, message = "Last name must be between 2 and 30 characters")
     private String lastName;
 }
-
