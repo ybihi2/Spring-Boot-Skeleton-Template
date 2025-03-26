@@ -1,12 +1,16 @@
 //This is where user data is processed.
 
-
-
 package com.jydoc.deliverable3.Service;
 import com.jydoc.deliverable3.DTO.UserDTO;
 import com.jydoc.deliverable3.Model.UserModel;
+import com.jydoc.deliverable3.Repository.UserRepository;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 
 public class UserService {
+
 
     public UserModel convertToEntity(UserDTO UserDto) {
 
@@ -30,5 +34,10 @@ public class UserService {
         user.setEmail(UserModel.getEmail());
         user.setPassword(UserModel.getPassword());
         return user;
+    }
+
+
+    public boolean authenticate(@NotBlank(message = "Email cannot be empty") @Email(message = "Invalid email format") String email, @NotBlank(message = "Password cannot be empty") @Size(min = 6, message = "Password must be at least 6 characters") @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d).{6,}$",
+             message = "Password must contain at least one letter and one number") String password) { return true;
     }
 }

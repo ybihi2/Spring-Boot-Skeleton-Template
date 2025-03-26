@@ -1,34 +1,55 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="UTF-8">
-  <title>Registration</title>
-  <link rel="stylesheet" href="styles.css"> <!-- Optional: Link to your CSS for styling -->
+  <title>User Registration</title>
+  <style>
+    .error { color: red; }
+    .error-border { border: 1px solid red; }
+  </style>
 </head>
 <body>
-<div class="container">
-  <h1>Registration Form</h1>
+<h1>Register</h1>
+<form th:action="@{/register}" method="post" th:object="${user}">
+  <!-- CSRF Token (required for POST) -->
 
-  <form th:action="@{/register}" method="post" th:object="${user}">
-    <!-- First Name -->
-    <label for="firstName">First Name:</label>
-    <input type="text" id="firstName" name="firstName" th:field="*{firstName}" placeholder="Enter your first name" required/>
 
-    <!-- Last Name -->
-    <label for="lastName">Last Name:</label>
-    <input type="text" id="lastName" name="lastName" th:field="*{lastName}" placeholder="Enter your last name" required/>
+  <!-- Email Field -->
+  <div>
+    <label>Email:</label>
+    <input type="email" th:field="*{email}"
+           th:class="${#fields.hasErrors('email')} ? 'error-border' : ''"/>
+    <span th:if="${#fields.hasErrors('email')}"
+          th:errors="*{email}" class="error"></span>
+  </div>
 
-    <!-- Email -->
-    <label for="email">Email:</label>
-    <input type="email" id="email" name="email" th:field="*{email}" placeholder="Enter your email" required/>
+  <!-- Password Field -->
+  <div>
+    <label>Password:</label>
+    <input type="password" th:field="*{password}"
+           th:class="${#fields.hasErrors('password')} ? 'error-border' : ''"/>
+    <span th:if="${#fields.hasErrors('password')}"
+          th:errors="*{password}" class="error"></span>
+  </div>
 
-    <!-- Password -->
-    <label for="password">Password:</label>
-    <input type="password" id="password" name="password" th:field="*{password}" placeholder="Enter your password" required/>
+  <!-- First Name Field -->
+  <div>
+    <label>First Name:</label>
+    <input type="text" th:field="*{firstName}"
+           th:class="${#fields.hasErrors('firstName')} ? 'error-border' : ''"/>
+    <span th:if="${#fields.hasErrors('firstName')}"
+          th:errors="*{firstName}" class="error"></span>
+  </div>
 
-    <!-- Submit Button -->
-    <button type="submit">Register</button>
-  </form>
-</div>
+  <!-- Last Name Field -->
+  <div>
+    <label>Last Name:</label>
+    <input type="text" th:field="*{lastName}"
+           th:class="${#fields.hasErrors('lastName')} ? 'error-border' : ''"/>
+    <span th:if="${#fields.hasErrors('lastName')}"
+          th:errors="*{lastName}" class="error"></span>
+  </div>
+
+  <button type="submit">Register</button>
+</form>
 </body>
 </html>

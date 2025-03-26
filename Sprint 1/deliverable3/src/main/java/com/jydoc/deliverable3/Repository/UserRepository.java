@@ -13,7 +13,7 @@ public interface UserRepository extends CrudRepository<UserModel, Long> {
 
     //Custom Queries
     List<UserModel> findById(int id);  //TODO: Switch this to Long type
-    List<UserModel> findByEmail(String email);
+    //static List<UserModel> findByEmail(String email);
     List<UserModel> findByFirstName(String firstName);
     List<UserModel> findByLastName(String lastName);
     List<UserModel> findByFirstNameAndLastName(String firstName, String lastName);
