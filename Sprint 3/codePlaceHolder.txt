@@ -1,0 +1,12 @@
+// Update patient records & generate reports
+public class RecordUpdater {
+    public void updateIntake(String patientName, String med, String status) {
+        System.out.println("Updating " + patientName + "'s record: " + med + " - " + status);
+        // Save to DB
+    }
+
+    public String generateMonthlyReport(String patientName) {
+        // Simulated report content
+        return "Monthly Report for " + patientName + ":\nMissed: MedA\nTaken: MedB";
+    }
+}
