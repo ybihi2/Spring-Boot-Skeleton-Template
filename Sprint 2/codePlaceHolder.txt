@@ -1,12 +1,1 @@
-// tracking and notifications
-public class ReminderService {
-    public void sendReminder(String method, boolean urgent) {
-        if (urgent) {
-            System.out.println("Sending urgent reminder via " + method);
-            // Notify provider + call patient
-        } else {
-            System.out.println("Sending non-urgent reminder via " + method);
-            // Push notification
-        }
-    }
-}
+
