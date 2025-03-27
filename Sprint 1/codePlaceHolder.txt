@@ -1,13 +1,1 @@
-// Account creation
-public class AccountService {
-    public void createPatient(String name, String email, String history, String meds) {
-        // Store patient data (simplified)
-        System.out.println("Storing patient: " + name);
-        // Insert into MySQL logic here
-    }
-
-    public void createProvider(String name, String contact, String pastRecords) {
-        System.out.println("Storing provider: " + name);
-        // Insert into MySQL logic here
-    }
-}
+//Check deliverable3 folder
