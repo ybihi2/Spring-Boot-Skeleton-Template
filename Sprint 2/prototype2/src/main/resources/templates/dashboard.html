@@ -1,12 +1,21 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="en">
 <head>
+  <!--
+    =============================================
+    HEAD SECTION
+    - Sets character encoding and viewport
+    - Includes Bootstrap CSS
+    - Defines custom styles for cards and admin section
+    =============================================
+  -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>User Dashboard</title>
+  <title>User Dashboard - JYDoc System</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
+    /* Card hover effects */
     .card {
       transition: transform 0.3s;
     }
@@ -14,20 +23,28 @@
       transform: translateY(-5px);
       box-shadow: 0 10px 20px rgba(0,0,0,0.1);
     }
+    /* Visual indicator for admin section */
     .admin-section {
       border-left: 4px solid #dc3545;
     }
   </style>
 </head>
 <body>
-<!-- Navigation -->
+<!--
+  =============================================
+  NAVIGATION BAR
+  - Dark themed navbar with system branding
+  - Displays current username (from Spring Security)
+  - Includes logout button
+  =============================================
+-->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
   <div class="container">
     <a class="navbar-brand" href="#">JYDoc System</a>
     <div class="d-flex">
-                <span class="navbar-text me-3 text-white">
-                    Welcome, <span sec:authentication="name"></span>
-                </span>
+      <span class="navbar-text me-3 text-white">
+        Welcome, <span sec:authentication="name"></span>
+      </span>
       <form th:action="@{/logout}" method="post">
         <button class="btn btn-outline-light" type="submit">Logout</button>
       </form>
@@ -35,11 +52,24 @@
   </div>
 </nav>
 
-<!-- Main Content -->
+<!--
+  =============================================
+  MAIN CONTENT CONTAINER
+  - Contains sidebar and main dashboard area
+  - Responsive layout using Bootstrap grid
+  =============================================
+-->
 <div class="container mt-4">
   <div class="row">
-    <!-- Sidebar -->
+    <!--
+      =========================================
+      SIDEBAR SECTION (3-column width)
+      - Contains user profile card
+      - Quick actions menu with conditional admin links
+      =========================================
+    -->
     <div class="col-md-3">
+      <!-- User Profile Card -->
       <div class="card mb-4">
         <div class="card-header bg-primary text-white">
           User Profile
@@ -52,7 +82,7 @@
         </div>
       </div>
 
-      <!-- Quick Actions -->
+      <!-- Quick Actions Menu -->
       <div class="card">
         <div class="card-header bg-primary text-white">
           Quick Actions
@@ -61,13 +91,22 @@
           <a href="#" class="list-group-item list-group-item-action">Edit Profile</a>
           <a href="#" class="list-group-item list-group-item-action">Change Password</a>
           <a th:href="@{/user/reports}" class="list-group-item list-group-item-action">My Reports</a>
+          <!-- Admin-only link (conditionally displayed) -->
           <a th:if="${isAdmin}" th:href="@{/admin/users}" class="list-group-item list-group-item-action">User Management</a>
         </div>
       </div>
     </div>
 
-    <!-- Main Dashboard -->
+    <!--
+      =========================================
+      MAIN DASHBOARD AREA (9-column width)
+      - Contains overview card
+      - Statistics cards section
+      - Conditional admin tools section
+      =========================================
+    -->
     <div class="col-md-9">
+      <!-- Dashboard Overview Card -->
       <div class="row">
         <div class="col-12">
           <div class="card mb-4">
@@ -82,7 +121,12 @@
         </div>
       </div>
 
-      <!-- Stats Cards -->
+      <!--
+        STATISTICS CARDS SECTION
+        - Three equal-width cards showing key metrics
+        - Each has a different color scheme
+        - Placeholder data (would be dynamic in production)
+      -->
       <div class="row">
         <div class="col-md-4 mb-4">
           <div class="card text-white bg-success h-100">
@@ -113,7 +157,12 @@
         </div>
       </div>
 
-      <!-- Admin Section (Conditional) -->
+      <!--
+        ADMIN TOOLS SECTION
+        - Only visible to users with admin role
+        - Contains three management cards
+        - Red accent border for visual distinction
+      -->
       <div th:if="${isAdmin}" class="row mt-4">
         <div class="col-12">
           <div class="card admin-section">
@@ -158,6 +207,12 @@
   </div>
 </div>
 
+<!--
+  =============================================
+  FOOTER SCRIPTS
+  - Includes Bootstrap JS bundle
+  =============================================
+-->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
