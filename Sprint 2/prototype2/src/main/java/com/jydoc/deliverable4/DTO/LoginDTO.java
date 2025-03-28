@@ -2,6 +2,7 @@ package com.jydoc.deliverable4.DTO;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import java.io.Serializable;
 
 /**
  * Data Transfer Object (DTO) for user login requests.
@@ -18,7 +19,9 @@ public record LoginDTO(
         @NotBlank(message = "Password cannot be blank")
         @Size(min = 8, message = "Password must be at least 8 characters long")
         String password
-) {
+) implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     /**
      * Creates an empty LoginDTO instance.
