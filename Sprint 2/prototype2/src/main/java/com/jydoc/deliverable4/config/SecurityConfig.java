@@ -14,6 +14,19 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.session.jdbc.config.annotation.web.http.EnableJdbcHttpSession;
 
+/**
+ * Central security configuration class that defines authentication and authorization rules,
+ * CSRF protection, session management, and security headers for the application.
+ * <p>
+ * This configuration enables:
+ * <ul>
+ *   <li>Form-based authentication with custom login/logout pages</li>
+ *   <li>Role-based authorization (USER and ADMIN)</li>
+ *   <li>CSRF protection with cookie-based token storage</li>
+ *   <li>JDBC-based session management</li>
+ *   <li>BCrypt password hashing</li>
+ * </ul>
+ */
 @Configuration
 @EnableWebSecurity
 @EnableJdbcHttpSession
@@ -21,11 +34,9 @@ public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
 
-    public SecurityConfig(CustomUserDetailsService userDetailsService) {
-        this.userDetailsService = userDetailsService;
-    }
-
-    // Public endpoints configuration
+    /**
+     * Endpoints that are accessible without authentication.
+     */
     private static final String[] PUBLIC_ENDPOINTS = {
             "/",
             "/home",
@@ -39,96 +50,145 @@ public class SecurityConfig {
             "/api/public/**"
     };
 
+    /**
+     * Constructs a new SecurityConfig with required dependencies.
+     *
+     * @param userDetailsService custom implementation of UserDetailsService
+     */
+    public SecurityConfig(CustomUserDetailsService userDetailsService) {
+        this.userDetailsService = userDetailsService;
+    }
+
+    /**
+     * Configures the security filter chain with all security policies.
+     *
+     * @param http the HttpSecurity to configure
+     * @return the configured SecurityFilterChain
+     * @throws Exception if configuration fails
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                // CSRF configuration (enabled for forms, disabled for APIs)
-                .csrf(csrf -> csrf
-                        .ignoringRequestMatchers("/api/**")
-                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                )
-
-                // Security headers
-                .headers(headers -> headers
-                        .frameOptions(frame -> frame.sameOrigin())
-                        .httpStrictTransportSecurity(hsts -> hsts
-                                .includeSubDomains(true)
-                                .maxAgeInSeconds(31536000) // 1 year
-                        )
-                )
-
-                // Authorization configuration
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                        .requestMatchers("/dashboard").authenticated()
-                        .requestMatchers("/user/**").hasAuthority("ROLE_USER")
-                        .requestMatchers("/admin/**").hasAuthority("ROLE_ADMIN")
-                        .requestMatchers("/api/user/**").hasAuthority("ROLE_USER")
-                        .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
-                        .anyRequest().authenticated()
-                )
-
-                // Form login configuration
-                .formLogin(form -> form
-                        .loginPage("/login")
-                        .loginProcessingUrl("/perform_login")
-                        .defaultSuccessUrl("/dashboard", true)
-                        .failureUrl("/login?error=true")
-                        .usernameParameter("username")
-                        .passwordParameter("password")
-                        .permitAll()
-                )
-
-                // Logout configuration
-                .logout(logout -> logout
-                        .logoutUrl("/perform_logout")
-                        .logoutSuccessUrl("/login?logout")
-                        .deleteCookies("JSESSIONID", "XSRF-TOKEN")
-                        .invalidateHttpSession(true)
-                        .clearAuthentication(true)
-                        .permitAll()
-                )
-
-                // Session management (stateful)
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                        .invalidSessionUrl("/login?invalid-session")
-                        .maximumSessions(1)
-                        .maxSessionsPreventsLogin(false)
-                        .expiredUrl("/login?session-expired")
-                )
-
-                // Exception handling
-                .exceptionHandling(exceptions -> exceptions
-                        .accessDeniedPage("/access-denied")
-                )
-
-                // Set the custom UserDetailsService
-                .userDetailsService(userDetailsService);
+        configureCsrfProtection(http);
+        configureSecurityHeaders(http);
+        configureAuthorization(http);
+        configureFormBasedAuthentication(http);
+        configureLogout(http);
+        configureSessionManagement(http);
+        configureExceptionHandling(http);
 
         return http.build();
     }
 
+    /**
+     * Configures CSRF protection with exceptions for API endpoints.
+     */
+    private void configureCsrfProtection(HttpSecurity http) throws Exception {
+        http.csrf(csrf -> csrf
+                .ignoringRequestMatchers("/api/**")
+                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+        );
+    }
+
+    /**
+     * Configures security-related HTTP headers.
+     */
+    /**
+     * Configures security-related HTTP headers.
+     */
+    private void configureSecurityHeaders(HttpSecurity http) throws Exception {
+        http.headers(headers -> headers
+                .frameOptions(frame -> frame.sameOrigin())
+                .httpStrictTransportSecurity(hsts -> hsts
+                        .includeSubDomains(true)
+                        .maxAgeInSeconds(31536000)
+                )
+        );
+    }
+
+    /**
+     * Configures authorization rules for different endpoints.
+     */
+    private void configureAuthorization(HttpSecurity http) throws Exception {
+        http.authorizeHttpRequests(auth -> auth
+                .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+                .requestMatchers("/dashboard").authenticated()
+                .requestMatchers("/user/**", "/api/user/**").hasAuthority("ROLE_USER")
+                .requestMatchers("/admin/**", "/api/admin/**").hasAuthority("ROLE_ADMIN")
+                .anyRequest().authenticated()
+        );
+    }
+
+    /**
+     * Configures form-based authentication with custom login page.
+     */
+    private void configureFormBasedAuthentication(HttpSecurity http) throws Exception {
+        http.formLogin(form -> form
+                .loginPage("/login")
+                .loginProcessingUrl("/perform_login")
+                .defaultSuccessUrl("/dashboard", true)
+                .failureUrl("/login?error=true")
+                .usernameParameter("username")
+                .passwordParameter("password")
+                .permitAll()
+        );
+    }
+
+    /**
+     * Configures logout behavior with session invalidation and cookie cleanup.
+     */
+    private void configureLogout(HttpSecurity http) throws Exception {
+        http.logout(logout -> logout
+                .logoutUrl("/perform_logout")
+                .logoutSuccessUrl("/login?logout")
+                .deleteCookies("JSESSIONID", "XSRF-TOKEN")
+                .invalidateHttpSession(true)
+                .clearAuthentication(true)
+                .permitAll()
+        );
+    }
+
+    /**
+     * Configures session management with concurrency control.
+     */
+    private void configureSessionManagement(HttpSecurity http) throws Exception {
+        http.sessionManagement(session -> session
+                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                .invalidSessionUrl("/login?invalid-session")
+                .maximumSessions(1)
+                .maxSessionsPreventsLogin(false)
+                .expiredUrl("/login?session-expired")
+        );
+    }
+
+    /**
+     * Configures exception handling for access denied scenarios.
+     */
+    private void configureExceptionHandling(HttpSecurity http) throws Exception {
+        http.exceptionHandling(exceptions -> exceptions
+                .accessDeniedPage("/access-denied")
+        );
+    }
+
+    /**
+     * Provides the AuthenticationManager bean.
+     *
+     * @param authenticationConfiguration the authentication configuration
+     * @return configured AuthenticationManager
+     * @throws Exception if configuration fails
+     */
     @Bean
     public AuthenticationManager authenticationManager(
             AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
 
+    /**
+     * Provides the password encoder bean (BCrypt implementation).
+     *
+     * @return BCryptPasswordEncoder instance
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
-    }
-
-    private void configureFormLogin(HttpSecurity http) throws Exception {
-        http.formLogin(form -> form
-                .loginPage("/login")
-                .loginProcessingUrl("/perform_login")
-                .usernameParameter("usernameOrEmail")  // Update parameter name
-                .passwordParameter("password")
-                .defaultSuccessUrl("/dashboard", true)
-                .failureUrl("/login?error=true")
-                .permitAll()
-        );
     }
 }
