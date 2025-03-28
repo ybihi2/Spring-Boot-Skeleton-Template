@@ -1,4 +1,4 @@
-package com.jydoc.deliverable4.exceptions;
+package com.jydoc.deliverable4.security.Exceptions;
 
 /**
  * Exception thrown when a user cannot be found in the system.
