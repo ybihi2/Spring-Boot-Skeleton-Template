@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -29,7 +30,17 @@ public class UserModel {
     @Column(unique = true, length = 100)
     private String email;
 
-    private boolean enabled;
+    @Builder.Default
+    private boolean enabled = true;
+
+    @Builder.Default
+    private boolean accountNonExpired = true;
+
+    @Builder.Default
+    private boolean credentialsNonExpired = true;
+
+    @Builder.Default
+    private boolean accountNonLocked = true;
 
     @ManyToMany(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
@@ -37,11 +48,11 @@ public class UserModel {
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "authority_id")
     )
-    @Fetch(FetchMode.JOIN)  // Improves eager loading performance
+    @Fetch(FetchMode.JOIN)
     @Builder.Default
     private Set<AuthorityModel> authorities = new HashSet<>();
 
-    // Improved authority management
+    // Authority management methods
     public void addAuthority(AuthorityModel authority) {
         this.authorities.add(authority);
         authority.getUsers().add(this);
@@ -52,8 +63,12 @@ public class UserModel {
         authority.getUsers().remove(this);
     }
 
-    // Custom builder to handle collections
+    // Custom builder to handle default values
     public static class UserModelBuilder {
+        private boolean enabled = true;
+        private boolean accountNonExpired = true;
+        private boolean credentialsNonExpired = true;
+        private boolean accountNonLocked = true;
         private Set<AuthorityModel> authorities = new HashSet<>();
     }
 }

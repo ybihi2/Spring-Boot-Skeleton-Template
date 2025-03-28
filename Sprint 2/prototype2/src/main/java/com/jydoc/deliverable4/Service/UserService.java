@@ -9,21 +9,30 @@ import com.jydoc.deliverable4.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
 /**
- * Service layer for user management operations including:
+ * Service layer for comprehensive user management including:
  * <ul>
  *   <li>User registration and validation</li>
  *   <li>Authentication and credential verification</li>
- *   <li>User role management</li>
+ *   <li>User role and authority management</li>
+ *   <li>Account status handling</li>
  * </ul>
  *
- * <p>All database operations are transactional with appropriate propagation settings.</p>
+ * <p>All database operations are transactional with appropriate propagation settings.
+ * Integrates with Spring Security for authentication and authorization.</p>
  */
 @Service
 @RequiredArgsConstructor
@@ -35,11 +44,12 @@ public class UserService {
     private final UserRepository userRepository;
     private final AuthorityRepository authorityRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
 
     // ---------------------- Public API ----------------------
 
     /**
-     * Registers a new user with the system.
+     * Registers a new user with the system after validating all requirements.
      *
      * @param userDto the user data transfer object containing registration details
      * @throws UsernameExistsException if the username is already taken
@@ -56,11 +66,11 @@ public class UserService {
     }
 
     /**
-     * Authenticates a user with provided credentials.
+     * Authenticates a user using Spring Security's authentication manager.
      *
      * @param loginDto the login data transfer object containing credentials
-     * @return authenticated UserModel
-     * @throws AuthenticationException if credentials are invalid
+     * @return authenticated UserModel entity
+     * @throws AuthenticationException if credentials are invalid or account is locked/disabled
      * @throws IllegalArgumentException if login data is null
      */
     @Transactional(readOnly = true)
@@ -72,7 +82,7 @@ public class UserService {
     }
 
     /**
-     * Validates login credentials and returns the authenticated user.
+     * Validates login credentials against stored user data.
      *
      * @param loginDto the login credentials
      * @return authenticated UserModel
@@ -105,6 +115,41 @@ public class UserService {
         return user;
     }
 
+    // ---------------------- Authentication Methods ----------------------
+
+    /**
+     * Core authentication method using Spring Security's authentication manager.
+     *
+     * @param username the username to authenticate
+     * @param password the raw password to verify
+     * @return authenticated UserModel
+     * @throws AuthenticationException wrapping various authentication failure scenarios
+     */
+    @Transactional(readOnly = true)
+    public UserModel authenticateUser(String username, String password) {
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(username, password)
+            );
+
+            return userRepository.findByUsername(authentication.getName())
+                    .orElseThrow(() -> {
+                        logger.error("Authentication succeeded but user not found: {}", username);
+                        return new AuthenticationException("User account error");
+                    });
+
+        } catch (BadCredentialsException e) {
+            logger.warn("Authentication failed - bad credentials for user: {}", username);
+            throw new AuthenticationException("Invalid username or password");
+        } catch (DisabledException e) {
+            logger.warn("Authentication failed - disabled account: {}", username);
+            throw new AuthenticationException("Account is disabled");
+        } catch (LockedException e) {
+            logger.warn("Authentication failed - locked account: {}", username);
+            throw new AuthenticationException("Account is locked");
+        }
+    }
+
     // ---------------------- Core Business Logic ----------------------
 
     /**
@@ -126,7 +171,7 @@ public class UserService {
     }
 
     /**
-     * Assigns the default role to a new user.
+     * Assigns the default role to a new user, creating the role if it doesn't exist.
      *
      * @param user the user to receive the default role
      */
@@ -163,7 +208,7 @@ public class UserService {
     /**
      * Finds an active user by username or email.
      *
-     * @param usernameOrEmail the user identifier
+     * @param usernameOrEmail the user identifier (username or email)
      * @return Optional containing the user if found and active
      */
     @Transactional(readOnly = true)
