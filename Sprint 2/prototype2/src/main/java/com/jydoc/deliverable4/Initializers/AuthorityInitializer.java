@@ -37,7 +37,7 @@ public class AuthorityInitializer {
      * Creates an authority if it doesn't already exist.
      * @param authorityName the name of the authority to create
      */
-    private void createAuthorityIfNotExists(String authorityName) {
+    public void createAuthorityIfNotExists(String authorityName) {
         authorityRepository.findByAuthority(authorityName)
                 .orElseGet(() -> {
                     AuthorityModel authority = new AuthorityModel();
