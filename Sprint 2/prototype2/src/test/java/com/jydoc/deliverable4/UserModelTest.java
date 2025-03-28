@@ -39,8 +39,6 @@ class UserModelTest {
                 .username("testuser")
                 .password("encodedPassword")
                 .email("test@example.com")
-                .firstName("firstname")
-                .lastName("lastname")
                 .build();
 
         // When
@@ -63,8 +61,6 @@ class UserModelTest {
             UserModel user1 = UserModel.builder()
                     .username("uniqueuser")
                     .password("password1")
-                    .firstName("firstname")
-                    .lastName("lastname")
                     .build();
             entityManager.persist(user1);
         });
@@ -88,8 +84,6 @@ class UserModelTest {
         executeInTransaction(() -> {
             UserModel user1 = UserModel.builder()
                     .username("user1")
-                    .firstName("firstname")
-                    .lastName("lastname")
                     .password("password1")
                     .email("unique@example.com")
                     .build();
@@ -102,8 +96,6 @@ class UserModelTest {
                 UserModel user2 = UserModel.builder()
                         .username("user2")
                         .password("password2")
-                        .firstName("firstname")
-                        .lastName("lastname")
                         .email("unique@example.com")
                         .build();
                 entityManager.persist(user2);
@@ -118,8 +110,6 @@ class UserModelTest {
         UserModel user = UserModel.builder()
                 .username("noemail")
                 .password("password")
-                .firstName("firstname")
-                .lastName("lastname")
                 .email(null)
                 .build();
 
