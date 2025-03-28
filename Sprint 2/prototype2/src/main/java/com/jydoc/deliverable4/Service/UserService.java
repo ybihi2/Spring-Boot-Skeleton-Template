@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -251,6 +252,78 @@ public class UserService {
     public Optional<UserModel> findActiveUser(String usernameOrEmail) {
         return userRepository.findByUsernameOrEmail(usernameOrEmail.trim().toLowerCase())
                 .filter(UserModel::isEnabled);
+    }
+
+    /**
+     * Gets the total count of users in the system
+     *
+     * @return total user count
+     */
+    @Transactional(readOnly = true)
+    public long getUserCount() {
+        return userRepository.count();
+    }
+
+//    /** TODO:Implement this
+//     * Gets a list of recently created users
+//     * @param limit maximum number of users to return
+//     * @return list of recent users ordered by creation date
+//     */
+//    @Transactional(readOnly = true)
+//    public List<UserModel> getRecentUsers(int limit) {
+//        return userRepository.findTopNByOrderByCreatedDateDesc(limit);
+//    }
+
+    /**
+     * Checks if a user exists with the given ID
+     *
+     * @param id the user ID to check
+     * @return true if user exists, false otherwise
+     */
+    @Transactional(readOnly = true)
+    public boolean existsById(Long id) {
+        return userRepository.existsById(id);
+    }
+
+    /**
+     * Gets all users in the system
+     *
+     * @return list of all users
+     */
+    @Transactional(readOnly = true)
+    public List<UserModel> getAllUsers() {
+        return userRepository.findAll();
+    }
+
+    /**
+     * Finds a user by ID
+     *
+     * @param id user ID
+     * @return Optional containing the user if found
+     */
+    @Transactional(readOnly = true)
+    public Optional<UserModel> getUserById(Long id) {
+        return userRepository.findById(id);
+    }
+
+    /**
+     * Updates a user's information
+     *
+     * @param user the user with updated information
+     */
+    @Transactional
+    public void updateUser(UserModel user) {
+        userRepository.save(user);
+    }
+
+    /**
+     * Deletes a user by ID
+     *
+     * @param id the ID of the user to delete
+     */
+    @Transactional
+    public void deleteUser(Long id) {
+        userRepository.deleteById(id);
     }
 
     // ---------------------- Custom Exceptions ----------------------
