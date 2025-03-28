@@ -2,7 +2,7 @@ package com.jydoc.deliverable4.controllers;
 
 import com.jydoc.deliverable4.model.UserModel;
 import com.jydoc.deliverable4.Service.UserService;
-import com.jydoc.deliverable4.exceptions.UserNotFoundException;
+import com.jydoc.deliverable4.security.Exceptions.UserNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
