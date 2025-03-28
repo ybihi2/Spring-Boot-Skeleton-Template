@@ -3,11 +3,9 @@ package com.jydoc.deliverable4;
 import com.jydoc.deliverable4.model.UserModel;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import jakarta.validation.ConstraintViolationException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,6 +39,8 @@ class UserModelTest {
                 .username("testuser")
                 .password("encodedPassword")
                 .email("test@example.com")
+                .firstName("firstname")
+                .lastName("lastname")
                 .build();
 
         // When
@@ -63,6 +63,8 @@ class UserModelTest {
             UserModel user1 = UserModel.builder()
                     .username("uniqueuser")
                     .password("password1")
+                    .firstName("firstname")
+                    .lastName("lastname")
                     .build();
             entityManager.persist(user1);
         });
@@ -86,6 +88,8 @@ class UserModelTest {
         executeInTransaction(() -> {
             UserModel user1 = UserModel.builder()
                     .username("user1")
+                    .firstName("firstname")
+                    .lastName("lastname")
                     .password("password1")
                     .email("unique@example.com")
                     .build();
@@ -98,6 +102,8 @@ class UserModelTest {
                 UserModel user2 = UserModel.builder()
                         .username("user2")
                         .password("password2")
+                        .firstName("firstname")
+                        .lastName("lastname")
                         .email("unique@example.com")
                         .build();
                 entityManager.persist(user2);
@@ -112,6 +118,8 @@ class UserModelTest {
         UserModel user = UserModel.builder()
                 .username("noemail")
                 .password("password")
+                .firstName("firstname")
+                .lastName("lastname")
                 .email(null)
                 .build();
 
