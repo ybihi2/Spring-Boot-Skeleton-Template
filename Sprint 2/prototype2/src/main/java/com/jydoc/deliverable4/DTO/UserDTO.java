@@ -1,37 +1,21 @@
 package com.jydoc.deliverable4.DTO;
 
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import jakarta.validation.constraints.NotEmpty;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-/**
- * Data Transfer Object (DTO) for user registration and updates.
- * <p>
- * Contains validation rules for user input with appropriate error messages.
- * Represents the minimum required data for user operations.
- */
-@Data
+@Setter
+@Getter
 public class UserDTO {
-
-    /**
-     * Unique username for the user.
-     * Must be 3-20 characters long.
-     */
-    @NotEmpty(message = "Username is required")
+    // Getters and Setters
+    @NotBlank(message = "Username is required")
     @Size(min = 3, max = 20, message = "Username must be 3-20 characters")
     private String username;
 
-    /**
-     * Secure password for the user account.
-     * Must contain at least:
-     * - 6 characters
-     * - One uppercase letter
-     * - One lowercase letter
-     * - One number
-     */
-    @NotEmpty(message = "Password is required")
+    @NotBlank(message = "Password is required")
     @Size(min = 6, message = "Password must be at least 6 characters")
     @Pattern(
             regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).+$",
@@ -39,31 +23,30 @@ public class UserDTO {
     )
     private String password;
 
-    /**
-     * User's email address.
-     * Must be in valid email format.
-     */
-    @Email(message = "Invalid email format")
-    @NotEmpty(message = "Email is required")
+    @NotBlank(message = "Email is required")
+    @Pattern(regexp = "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@" +
+            "(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$",
+            message = "Invalid email format")
     private String email;
 
-    /**
-     * User's first name.
-     * Cannot be empty.
-     */
-    @NotEmpty(message = "First name is required")
+    @NotBlank(message = "First name is required")
     private String firstName;
 
-    /**
-     * User's last name.
-     * Cannot be empty.
-     */
-    @NotEmpty(message = "Last name is required")
+    @NotBlank(message = "Last name is required")
     private String lastName;
 
-    /**
-     * Default authority/role assigned to the user.
-     * Defaults to 'ROLE_USER' if not specified.
-     */
     private String authority = "ROLE_USER";
+
+    // Constructors, getters and setters remain the same
+    public UserDTO() {
+    }
+
+    public UserDTO(String username, String password, String email, String firstName, String lastName) {
+        this.username = username;
+        this.password = password;
+        this.email = email;
+        this.firstName = firstName;
+        this.lastName = lastName;
+    }
+
 }

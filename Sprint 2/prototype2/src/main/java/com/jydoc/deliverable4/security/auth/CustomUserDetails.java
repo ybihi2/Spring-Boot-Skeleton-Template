@@ -6,42 +6,32 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
 import java.util.Objects;
 
-/**
- * Custom implementation of Spring Security's UserDetails interface.
- * Extends the standard user details with additional user ID field while implementing
- * all required UserDetails contract methods.
- *
- * <p>This class serves as an adapter between the application's user model
- * and Spring Security's authentication framework.
- */
 public class CustomUserDetails implements UserDetails {
+    private static final long serialVersionUID = 1L;
+
     private final Long userId;
     private final String username;
     private final String password;
     private final boolean enabled;
+    private final boolean accountNonExpired;
+    private final boolean accountNonLocked;
+    private final boolean credentialsNonExpired;
     private final Collection<? extends GrantedAuthority> authorities;
 
-    /**
-     * Constructs a new CustomUserDetails instance.
-     *
-     * @param userId the unique user identifier from the application's domain model
-     * @param username the username used to authenticate
-     * @param password the encrypted password
-     * @param enabled flag indicating if the user is enabled
-     * @param authorities the user's granted authorities (roles/permissions)
-     */
     public CustomUserDetails(Long userId, String username, String password,
-                             boolean enabled, Collection<? extends GrantedAuthority> authorities) {
-        this.userId = userId;
-        this.username = username;
-        this.password = password;
+                             boolean enabled, boolean accountNonExpired,
+                             boolean accountNonLocked, boolean credentialsNonExpired,
+                             Collection<? extends GrantedAuthority> authorities) {
+        this.userId = Objects.requireNonNull(userId);
+        this.username = Objects.requireNonNull(username);
+        this.password = Objects.requireNonNull(password);
         this.enabled = enabled;
-        this.authorities = authorities;
+        this.accountNonExpired = accountNonExpired;
+        this.accountNonLocked = accountNonLocked;
+        this.credentialsNonExpired = credentialsNonExpired;
+        this.authorities = Objects.requireNonNull(authorities);
     }
 
-    /**
-     * @return the application-specific user ID
-     */
     public Long getUserId() {
         return userId;
     }
@@ -61,28 +51,19 @@ public class CustomUserDetails implements UserDetails {
         return username;
     }
 
-    /**
-     * @return true if the account is not expired (always true in this implementation)
-     */
     @Override
     public boolean isAccountNonExpired() {
-        return true;
+        return accountNonExpired;
     }
 
-    /**
-     * @return true if the account is not locked (always true in this implementation)
-     */
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return accountNonLocked;
     }
 
-    /**
-     * @return true if credentials are not expired (always true in this implementation)
-     */
     @Override
     public boolean isCredentialsNonExpired() {
-        return true;
+        return credentialsNonExpired;
     }
 
     @Override
@@ -90,35 +71,17 @@ public class CustomUserDetails implements UserDetails {
         return enabled;
     }
 
-    /**
-     * Compares users based on username only.
-     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         CustomUserDetails that = (CustomUserDetails) o;
-        return Objects.equals(username, that.username);
+        return Objects.equals(userId, that.userId) &&
+                Objects.equals(username, that.username);
     }
 
-    /**
-     * Generates hash code based on username only.
-     */
     @Override
     public int hashCode() {
-        return Objects.hash(username);
-    }
-
-    /**
-     * Returns a string representation of the user details (excluding password).
-     */
-    @Override
-    public String toString() {
-        return "CustomUserDetails{" +
-                "userId=" + userId +
-                ", username='" + username + '\'' +
-                ", enabled=" + enabled +
-                ", authorities=" + authorities +
-                '}';
+        return Objects.hash(userId, username);
     }
 }
