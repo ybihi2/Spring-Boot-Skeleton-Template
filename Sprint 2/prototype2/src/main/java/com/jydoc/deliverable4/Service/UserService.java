@@ -33,6 +33,22 @@ import java.util.Optional;
  *
  * <p>All database operations are transactional with appropriate propagation settings.
  * Integrates with Spring Security for authentication and authorization.</p>
+ *
+ * <p>This service handles the core business logic for user operations while
+ * delegating specific concerns to dedicated components:</p>
+ * <ul>
+ *   <li>Persistence operations to repositories</li>
+ *   <li>Password encoding to PasswordEncoder</li>
+ *   <li>Authentication to AuthenticationManager</li>
+ *   <li>Validation to UserValidationHelper</li>
+ * </ul>
+ *
+ * @author Your Name
+ * @version 1.0
+ * @see UserModel
+ * @see UserDTO
+ * @see LoginDTO
+ * @since 1.0
  */
 @Service
 @RequiredArgsConstructor
@@ -55,6 +71,9 @@ public class UserService {
      * @throws UsernameExistsException if the username is already taken
      * @throws EmailExistsException if the email is already registered
      * @throws IllegalArgumentException if user data is invalid
+     * @see #validateRegistration(UserDTO)
+     * @see #buildUserFromDto(UserDTO)
+     * @see #assignDefaultRole(UserModel)
      */
     @Transactional
     public void registerNewUser(UserDTO userDto) {
@@ -72,6 +91,7 @@ public class UserService {
      * @return authenticated UserModel entity
      * @throws AuthenticationException if credentials are invalid or account is locked/disabled
      * @throws IllegalArgumentException if login data is null
+     * @see #authenticateUser(String, String)
      */
     @Transactional(readOnly = true)
     public UserModel authenticate(LoginDTO loginDto) {
@@ -87,6 +107,7 @@ public class UserService {
      * @param loginDto the login credentials
      * @return authenticated UserModel
      * @throws AuthenticationException if authentication fails
+     * @see #findActiveUser(String)
      */
     @Transactional(readOnly = true)
     public UserModel validateLogin(LoginDTO loginDto) {
@@ -123,7 +144,12 @@ public class UserService {
      * @param username the username to authenticate
      * @param password the raw password to verify
      * @return authenticated UserModel
-     * @throws AuthenticationException wrapping various authentication failure scenarios
+     * @throws AuthenticationException wrapping various authentication failure scenarios:
+     *         <ul>
+     *           <li>BadCredentialsException - invalid username/password</li>
+     *           <li>DisabledException - account disabled</li>
+     *           <li>LockedException - account locked</li>
+     *         </ul>
      */
     @Transactional(readOnly = true)
     public UserModel authenticateUser(String username, String password) {
@@ -156,7 +182,13 @@ public class UserService {
      * Constructs a UserModel from registration DTO with proper encoding and normalization.
      *
      * @param userDto the user registration data
-     * @return properly configured UserModel
+     * @return properly configured UserModel with:
+     *         <ul>
+     *           <li>Trimmed username</li>
+     *           <li>Encoded password</li>
+     *           <li>Normalized email (lowercase and trimmed)</li>
+     *           <li>Account flags set to active</li>
+     *         </ul>
      */
     private UserModel buildUserFromDto(UserDTO userDto) {
         return UserModel.builder()
@@ -174,6 +206,8 @@ public class UserService {
      * Assigns the default role to a new user, creating the role if it doesn't exist.
      *
      * @param user the user to receive the default role
+     * @throws IllegalStateException if transaction propagation fails
+     * @see AuthorityModel
      */
     @Transactional(propagation = Propagation.MANDATORY)
     protected void assignDefaultRole(UserModel user) {
@@ -195,6 +229,8 @@ public class UserService {
      *
      * @param userDto the user registration data
      * @throws IllegalArgumentException if user data is invalid
+     * @throws UsernameExistsException if username exists
+     * @throws EmailExistsException if email exists
      */
     private void validateRegistration(UserDTO userDto) {
         if (userDto == null) {
@@ -209,7 +245,7 @@ public class UserService {
      * Finds an active user by username or email.
      *
      * @param usernameOrEmail the user identifier (username or email)
-     * @return Optional containing the user if found and active
+     * @return Optional containing the user if found and active, empty otherwise
      */
     @Transactional(readOnly = true)
     public Optional<UserModel> findActiveUser(String usernameOrEmail) {
@@ -220,9 +256,14 @@ public class UserService {
     // ---------------------- Custom Exceptions ----------------------
 
     /**
-     * Exception thrown when authentication fails.
+     * Exception thrown when authentication fails for various reasons.
      */
     public static class AuthenticationException extends RuntimeException {
+        /**
+         * Constructs a new authentication exception with the specified detail message.
+         *
+         * @param message the detail message
+         */
         public AuthenticationException(String message) {
             super(message);
             logger.error("Authentication failed: {}", message);
@@ -233,6 +274,11 @@ public class UserService {
      * Exception thrown when attempting to register an existing username.
      */
     public static class UsernameExistsException extends RuntimeException {
+        /**
+         * Constructs a new username exists exception.
+         *
+         * @param username the duplicate username
+         */
         public UsernameExistsException(String username) {
             super(String.format("Username '%s' already exists", username));
             logger.warn("Registration attempt with existing username: {}", username);
@@ -243,6 +289,11 @@ public class UserService {
      * Exception thrown when attempting to register an existing email.
      */
     public static class EmailExistsException extends RuntimeException {
+        /**
+         * Constructs a new email exists exception.
+         *
+         * @param email the duplicate email
+         */
         public EmailExistsException(String email) {
             super(String.format("Email '%s' is already registered", email));
             logger.warn("Registration attempt with existing email: {}", email);
