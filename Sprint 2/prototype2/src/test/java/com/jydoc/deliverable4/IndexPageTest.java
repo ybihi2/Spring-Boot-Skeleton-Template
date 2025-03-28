@@ -191,7 +191,7 @@ public class IndexPageTest {
     public void testFeatureListItems(String feature) throws Exception {
         mockMvc.perform(get("/"))
                 .andExpect(status().isOk())
-                .andExpect(xpath(String.format("//li[contains(text(),'%s')]", feature)).exists());
+                .andExpect(xpath("//li[contains(., '" + feature + "')]").exists());
     }
 
     @Test

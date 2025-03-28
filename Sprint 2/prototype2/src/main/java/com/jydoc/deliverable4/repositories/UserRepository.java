@@ -4,13 +4,16 @@ import com.jydoc.deliverable4.model.UserModel;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
  * Repository for {@link UserModel} entities providing user lookup operations.
  * Includes methods for finding users with different loading strategies for authorities.
  */
+@Repository
 public interface UserRepository extends JpaRepository<UserModel, Long> {
 
     // Basic user lookups
@@ -42,4 +45,28 @@ public interface UserRepository extends JpaRepository<UserModel, Long> {
     @Query("SELECT DISTINCT u FROM UserModel u LEFT JOIN FETCH u.authorities " +
             "WHERE u.username = :credential OR u.email = :credential")
     Optional<UserModel> findByUsernameOrEmailWithAuthorities(@Param("credential") String credential);
+
+//    /** TODO: Implement this
+//     * Finds the most recent users ordered by creation date.
+//     * @param limit maximum number of users to return
+//     * @return list of recent users
+//     */
+//    @Query("SELECT u FROM UserModel u ORDER BY u.createdDate DESC LIMIT :limit")
+//    List<UserModel> findTopNByOrderByCreatedDateDesc(@Param("limit") int limit);
+
+    /**
+     * Finds all users with their authorities eagerly loaded.
+     *
+     * @return list of all users with authorities
+     */
+    @Query("SELECT DISTINCT u FROM UserModel u LEFT JOIN FETCH u.authorities")
+    List<UserModel> findAllWithAuthorities();
+
+    /**
+     * Checks if a user exists by ID.
+     *
+     * @param id the user ID to check
+     * @return true if user exists, false otherwise
+     */
+    boolean existsById(Long id);
 }
