@@ -3,31 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <title>Register</title>
+    <!--
+      Main stylesheet for the application
+      Located in /src/main/resources/static/css/styles.css
+    -->
     <link th:href="@{/css/styles.css}" rel="stylesheet">
 </head>
 <body>
+<!--
+  Header fragment inclusion
+  Replaces this div with content from fragments/header.html
+  Located in /src/main/resources/templates/fragments/header.html
+-->
 <div th:replace="~{fragments/header :: header}"></div>
 
 <main>
+    <!-- Main page heading -->
     <h1>Register</h1>
 
-    <!-- Registration Form -->
+    <!--
+      Registration Form
+      Submits to /register endpoint (POST)
+      Binds to a 'user' model object from the controller
+    -->
     <form th:action="@{/register}" method="post" th:object="${user}">
+        <!-- Username input field -->
         <div>
             <label for="username">Username:</label>
+            <!--
+              Binds to user.username property
+              Required field validation
+            -->
             <input type="text" id="username" th:field="*{username}" required>
         </div>
+
+        <!-- Password input field -->
         <div>
             <label for="password">Password:</label>
+            <!--
+              Binds to user.password property
+              Required field validation
+              Type=password masks input
+            -->
             <input type="password" id="password" th:field="*{password}" required>
         </div>
+
+        <!-- Email input field -->
         <div>
             <label for="email">Email:</label>
+            <!--
+              Binds to user.email property
+              Type=email provides basic email format validation
+            -->
             <input type="email" id="email" th:field="*{email}">
         </div>
+
+        <!-- Form submission button -->
         <button type="submit">Register</button>
     </form>
 
+    <!--
+      Login link for existing users
+      Links to /login endpoint
+    -->
     <p>Already have an account? <a th:href="@{/login}">Login here</a></p>
 </main>
 </body>
