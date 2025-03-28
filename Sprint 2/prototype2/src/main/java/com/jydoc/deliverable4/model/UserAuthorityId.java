@@ -2,6 +2,8 @@ package com.jydoc.deliverable4.model;
 
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
+
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -17,6 +19,7 @@ import java.util.Objects;
 @AllArgsConstructor
 public class UserAuthorityId implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**
