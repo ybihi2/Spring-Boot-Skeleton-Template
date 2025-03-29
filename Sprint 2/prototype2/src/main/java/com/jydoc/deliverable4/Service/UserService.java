@@ -147,18 +147,17 @@ public class UserService {
      * Validates the basic structure of the UserDTO.
      */
     private void validateUserDto(UserDTO userDto) {
-        if (userDto == null) {
-            throw new IllegalArgumentException("UserDTO cannot be null");
-        }
-        if (userDto.getUsername() == null || userDto.getUsername().trim().isEmpty()) {
+        if (userDto == null) throw new IllegalArgumentException("UserDTO cannot be null");
+        if (userDto.getUsername() == null || userDto.getUsername().trim().isEmpty())
             throw new IllegalArgumentException("Username cannot be empty");
-        }
-        if (userDto.getPassword() == null || userDto.getPassword().trim().isEmpty()) {
+        if (userDto.getPassword() == null || userDto.getPassword().trim().isEmpty())
             throw new IllegalArgumentException("Password cannot be empty");
-        }
-        if (userDto.getEmail() == null || userDto.getEmail().trim().isEmpty()) {
+        if (userDto.getEmail() == null || userDto.getEmail().trim().isEmpty())
             throw new IllegalArgumentException("Email cannot be empty");
-        }
+        if (userDto.getFirstName() == null || userDto.getFirstName().trim().isEmpty())
+            throw new IllegalArgumentException("First name cannot be empty");
+        if (userDto.getLastName() == null || userDto.getLastName().trim().isEmpty())
+            throw new IllegalArgumentException("Last name cannot be empty");
     }
 
     /**
@@ -190,6 +189,8 @@ public class UserService {
                 .username(userDto.getUsername().trim())
                 .password(passwordEncoder.encode(userDto.getPassword()))
                 .email(userDto.getEmail().toLowerCase().trim())
+                .firstName(userDto.getFirstName().trim()) // Added
+                .lastName(userDto.getLastName().trim())   // Added
                 .enabled(true)
                 .accountNonExpired(true)
                 .credentialsNonExpired(true)

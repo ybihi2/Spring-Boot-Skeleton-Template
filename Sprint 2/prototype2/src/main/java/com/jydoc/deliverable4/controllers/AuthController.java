@@ -49,22 +49,23 @@ public class AuthController {
         return "register";
     }
 
-    /**
-     * Processes user registration form submission
-     * @param userDto User data transfer object
-     * @param result Validation result
-     * @return Redirect to log in on success, re-show form on error
-     */
     @PostMapping("/register")
     public String registerUser(@Valid @ModelAttribute("user") UserDTO userDto,
                                BindingResult result) {
         if (result.hasErrors()) {
-            logger.debug("Registration validation errors present");
+            logger.debug("Registration validation errors present: {}", result.getAllErrors());
             return "register";
         }
 
-        userService.registerNewUser(userDto);
-        return "redirect:/login?registered";
+        try {
+            userService.registerNewUser(userDto);
+            logger.info("User {} registered successfully", userDto.getUsername());
+            return "redirect:/login?registered";
+        } catch (Exception e) {
+            logger.error("Registration failed for {}: {}", userDto.getUsername(), e.getMessage());
+            result.reject("registration.error", "Registration failed: " + e.getMessage());
+            return "register";
+        }
     }
 
     // ========== LOGIN ENDPOINTS ==========
@@ -115,12 +116,26 @@ public class AuthController {
         try {
             UserModel user = userService.validateLogin(loginDto);
             session.setAttribute("user", user);
+
+            // Check if user has admin role
+            if (isAdmin(user)) {
+                logger.debug("Redirecting admin to admin dashboard");
+                return "redirect:/admin/dashboard";
+            }
+
+            logger.debug("Redirecting regular user to home");
             return "redirect:/home";
+
         } catch (UserService.AuthenticationException e) {
             logger.error("Login failed: {}", e.getMessage());
             redirectAttributes.addFlashAttribute("error", "Invalid credentials");
             return "redirect:/login?error";
         }
+    }
+
+    private boolean isAdmin(UserModel user) {
+        return user.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
     }
 
     // ========== HOME ENDPOINT ==========

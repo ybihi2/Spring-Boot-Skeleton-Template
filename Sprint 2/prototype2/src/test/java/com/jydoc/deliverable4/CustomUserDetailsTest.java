@@ -8,6 +8,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.ActiveProfiles;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -279,13 +280,19 @@ class CustomUserDetailsTest {
         @Test
         @DisplayName("Should return correct authorities")
         void shouldReturnCorrectAuthorities() {
+            // Setup
             CustomUserDetails userDetails = new CustomUserDetails(
                     USER_ID, USERNAME, PASSWORD,
                     true, true, true, true,
                     AUTHORITIES
             );
 
-            assertEquals(AUTHORITIES, userDetails.getAuthorities());
+            // Verify
+            Collection<? extends GrantedAuthority> authorities = userDetails.getAuthorities();
+
+            assertEquals(1, authorities.size());
+            GrantedAuthority authority = authorities.iterator().next();
+            assertEquals("ROLE_USER", authority.getAuthority());
         }
     }
 }

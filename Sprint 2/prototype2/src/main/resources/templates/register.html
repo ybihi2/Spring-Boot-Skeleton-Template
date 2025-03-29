@@ -3,69 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <title>Register</title>
-    <!--
-      Main stylesheet for the application
-      Located in /src/main/resources/static/css/styles.css
-    -->
     <link th:href="@{/css/styles.css}" rel="stylesheet">
 </head>
 <body>
-<!--
-  Header fragment inclusion
-  Replaces this div with content from fragments/header.html
-  Located in /src/main/resources/templates/fragments/header.html
--->
 <div th:replace="~{fragments/header :: header}"></div>
 
 <main>
-    <!-- Main page heading -->
     <h1>Register</h1>
 
-    <!--
-      Registration Form
-      Submits to /register endpoint (POST)
-      Binds to a 'user' model object from the controller
-    -->
+    <div class="error" th:if="${error}">
+        <span th:text="${error}">Registration failed. Please check your details.</span>
+    </div>
+
     <form th:action="@{/register}" method="post" th:object="${user}">
-        <!-- Username input field -->
+        <div>
+            <label for="firstName">First Name:</label>
+            <input id="firstName" required th:field="*{firstName}" type="text">
+            <span class="error" th:errors="*{firstName}"></span>
+        </div>
+
+        <div>
+            <label for="lastName">Last Name:</label>
+            <input id="lastName" required th:field="*{lastName}" type="text">
+            <span class="error" th:errors="*{lastName}"></span>
+        </div>
+
         <div>
             <label for="username">Username:</label>
-            <!--
-              Binds to user.username property
-              Required field validation
-            -->
             <input type="text" id="username" th:field="*{username}" required>
+            <span class="error" th:errors="*{username}"></span>
         </div>
 
-        <!-- Password input field -->
         <div>
             <label for="password">Password:</label>
-            <!--
-              Binds to user.password property
-              Required field validation
-              Type=password masks input
-            -->
             <input type="password" id="password" th:field="*{password}" required>
+            <span class="error" th:errors="*{password}"></span>
         </div>
 
-        <!-- Email input field -->
         <div>
             <label for="email">Email:</label>
-            <!--
-              Binds to user.email property
-              Type=email provides basic email format validation
-            -->
-            <input type="email" id="email" th:field="*{email}">
+            <input id="email" required th:field="*{email}" type="email">
+            <span class="error" th:errors="*{email}"></span>
         </div>
 
-        <!-- Form submission button -->
         <button type="submit">Register</button>
     </form>
 
-    <!--
-      Login link for existing users
-      Links to /login endpoint
-    -->
     <p>Already have an account? <a th:href="@{/login}">Login here</a></p>
 </main>
 </body>

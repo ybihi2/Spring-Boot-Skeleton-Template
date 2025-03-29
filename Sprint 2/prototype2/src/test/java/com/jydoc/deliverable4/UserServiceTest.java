@@ -11,16 +11,10 @@ import com.jydoc.deliverable4.repositories.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.DisabledException;
-import org.springframework.security.authentication.LockedException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.HashSet;
@@ -64,20 +58,29 @@ class UserServiceTest {
         testUserDto.setUsername("testuser");
         testUserDto.setEmail("test@example.com");
         testUserDto.setPassword("Password123!");
+        testUserDto.setFirstName("Test");  // Added
+        testUserDto.setLastName("User");   // Added
 
         testLoginDto = new LoginDTO("testuser", "Password123!");
 
-        testUser = new UserModel();
-        testUser.setUsername("testuser");
-        testUser.setEmail("test@example.com");
-        testUser.setPassword("encodedPassword");
-        testUser.setEnabled(true);
-        testUser.setAuthorities(new HashSet<>());
+        testUser = UserModel.builder()
+                .username("testuser")
+                .email("test@example.com")
+                .firstName("Test")
+                .lastName("User")
+                .password("encodedPassword")
+                .enabled(true)
+                .accountNonExpired(true)
+                .credentialsNonExpired(true)
+                .accountNonLocked(true)
+                .authorities(new HashSet<>())
+                .build();
 
         testAuthority = AuthorityModel.builder()
                 .authority("ROLE_USER")
                 .users(new HashSet<>())
                 .build();
+        testUser.addAuthority(testAuthority);  // Ensure testUser has the authority
     }
 
     // ---------------------- Registration Tests ----------------------
@@ -85,9 +88,9 @@ class UserServiceTest {
     @Test
     void registerNewUser_ValidUser_Success() {
         // Arrange
-        when(userRepository.existsByUsername(anyString())).thenReturn(false);
-        when(userRepository.existsByEmail(anyString())).thenReturn(false);
-        when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
+        when(userRepository.existsByUsername("testuser")).thenReturn(false);
+        when(userRepository.existsByEmail("test@example.com")).thenReturn(false);
+        when(passwordEncoder.encode("Password123!")).thenReturn("encodedPassword");
         when(authorityRepository.findByAuthority("ROLE_USER")).thenReturn(Optional.of(testAuthority));
         when(userRepository.save(any(UserModel.class))).thenReturn(testUser);
 
@@ -95,16 +98,12 @@ class UserServiceTest {
         userService.registerNewUser(testUserDto);
 
         // Assert
-        // Verify validation was called
         verify(validationHelper).validateUserRegistration(testUserDto);
-
-        // Verify repository interactions
         verify(userRepository).existsByUsername("testuser");
         verify(userRepository).existsByEmail("test@example.com");
-        verify(userRepository).save(any(UserModel.class));
-
-        // Verify authority assignment
+        verify(passwordEncoder).encode("Password123!");
         verify(authorityRepository).findByAuthority("ROLE_USER");
+        verify(userRepository).save(any(UserModel.class));
     }
 
     @Test
