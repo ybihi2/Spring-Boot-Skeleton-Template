@@ -15,12 +15,20 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 /**
- * Controller handling authentication-related operations including:
- * - User registration
- * - Login/logout functionality
- * - Session management
+ * Controller handling all authentication-related operations including user registration,
+ * login/logout functionality, and session management.
  *
- * All endpoints return Thymeleaf template names for view resolution.
+ * <p>This controller follows RESTful principles while returning Thymeleaf template names
+ * for view resolution. It provides endpoints for:</p>
+ * <ul>
+ *   <li>User registration flow</li>
+ *   <li>Login/logout processes</li>
+ *   <li>Session management</li>
+ *   <li>Home page display</li>
+ * </ul>
+ *
+ * <p>All endpoints include proper validation and error handling with appropriate
+ * redirects and flash attributes.</p>
  */
 @Controller
 public class AuthController {
@@ -29,19 +37,21 @@ public class AuthController {
     private final UserService userService;
 
     /**
-     * Constructs an AuthController with required UserService dependency
-     * @param userService Service handling user operations
+     * Constructs an AuthController with the required UserService dependency.
+     *
+     * @param userService the service handling user operations and business logic
      */
     public AuthController(UserService userService) {
         this.userService = userService;
     }
 
-    // ========== REGISTRATION ENDPOINTS ==========
+    /* ==================== REGISTRATION ENDPOINTS ==================== */
 
     /**
-     * Displays user registration form
-     * @param model Model to add attributes for view
-     * @return "register" template name
+     * Displays the user registration form.
+     *
+     * @param model the Spring Model to which the empty UserDTO is added
+     * @return the "register" template name for view resolution
      */
     @GetMapping("/register")
     public String showRegistrationForm(Model model) {
@@ -49,9 +59,18 @@ public class AuthController {
         return "register";
     }
 
+    /**
+     * Processes user registration form submission.
+     *
+     * @param userDto the user data transfer object containing registration info
+     * @param result  the binding result for validation errors
+     * @return redirect to login page on success, or re-show form with errors
+     */
     @PostMapping("/register")
-    public String registerUser(@Valid @ModelAttribute("user") UserDTO userDto,
-                               BindingResult result) {
+    public String registerUser(
+            @Valid @ModelAttribute("user") UserDTO userDto,
+            BindingResult result) {
+
         if (result.hasErrors()) {
             logger.debug("Registration validation errors present: {}", result.getAllErrors());
             return "register";
@@ -68,21 +87,23 @@ public class AuthController {
         }
     }
 
-    // ========== LOGIN ENDPOINTS ==========
+    /* ==================== LOGIN ENDPOINTS ==================== */
 
     /**
-     * Displays login form with optional status indicators
-     * @param model Model to add attributes for view
-     * @param error Optional error flag from redirect
-     * @param registered Optional registration success flag
-     * @param logout Optional logout success flag
-     * @return "login" template name
+     * Displays the login form with optional status indicators.
+     *
+     * @param model the Spring Model for view attributes
+     * @param error optional flag indicating previous login error
+     * @param registered optional flag indicating successful registration
+     * @param logout optional flag indicating successful logout
+     * @return the "login" template name for view resolution
      */
     @GetMapping("/login")
-    public String showLoginForm(Model model,
-                                @RequestParam(required = false) String error,
-                                @RequestParam(required = false) String registered,
-                                @RequestParam(required = false) String logout) {
+    public String showLoginForm(
+            Model model,
+            @RequestParam(required = false) String error,
+            @RequestParam(required = false) String registered,
+            @RequestParam(required = false) String logout) {
 
         model.addAttribute("loginData", LoginDTO.empty());
         model.addAttribute("error", error != null);
@@ -93,18 +114,20 @@ public class AuthController {
     }
 
     /**
-     * Processes login form submission
-     * @param loginDto Login credentials
-     * @param result Validation result
-     * @param session HTTP session to store user
-     * @param redirectAttributes For flash attributes
-     * @return Redirect to home on success, re-show form on error
+     * Processes login form submission and authenticates the user.
+     *
+     * @param loginDto the login credentials data transfer object
+     * @param result the binding result for validation errors
+     * @param session the HTTP session to store authenticated user
+     * @param redirectAttributes for flash attributes during redirect
+     * @return redirect to appropriate page based on user role, or re-show form with errors
      */
     @PostMapping("/login")
-    public String loginUser(@Valid @ModelAttribute("loginData") LoginDTO loginDto,
-                            BindingResult result,
-                            HttpSession session,
-                            RedirectAttributes redirectAttributes) {
+    public String loginUser(
+            @Valid @ModelAttribute("loginData") LoginDTO loginDto,
+            BindingResult result,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
 
         logger.debug("Processing login for: {}", loginDto.username());
 
@@ -117,14 +140,9 @@ public class AuthController {
             UserModel user = userService.validateLogin(loginDto);
             session.setAttribute("user", user);
 
-            // Check if user has admin role
-            if (isAdmin(user)) {
-                logger.debug("Redirecting admin to admin dashboard");
-                return "redirect:/admin/dashboard";
-            }
-
-            logger.debug("Redirecting regular user to home");
-            return "redirect:/home";
+            return isAdmin(user)
+                    ? "redirect:/admin/dashboard"
+                    : "redirect:/home";
 
         } catch (UserService.AuthenticationException e) {
             logger.error("Login failed: {}", e.getMessage());
@@ -133,18 +151,25 @@ public class AuthController {
         }
     }
 
+    /**
+     * Checks if the given user has admin privileges.
+     *
+     * @param user the user model to check
+     * @return true if user has admin role, false otherwise
+     */
     private boolean isAdmin(UserModel user) {
         return user.getAuthorities().stream()
                 .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
     }
 
-    // ========== HOME ENDPOINT ==========
+    /* ==================== HOME ENDPOINT ==================== */
 
     /**
-     * Displays home page for authenticated users
-     * @param model Model to add attributes for view
-     * @param session HTTP session containing user
-     * @return "index" template name
+     * Displays the home page for authenticated users.
+     *
+     * @param model the Spring Model for view attributes
+     * @param session the HTTP session containing the authenticated user
+     * @return the "index" template name for view resolution
      */
     @GetMapping("/home")
     public String showHomePage(Model model, HttpSession session) {
@@ -155,11 +180,12 @@ public class AuthController {
         return "index";
     }
 
-    // ========== LOGOUT ENDPOINTS ==========
+    /* ==================== LOGOUT ENDPOINTS ==================== */
 
     /**
-     * Displays logout confirmation page
-     * @return "logout" template name
+     * Displays the logout confirmation page.
+     *
+     * @return the "logout" template name for view resolution
      */
     @GetMapping("/confirm-logout")
     public String showLogoutConfirmation() {
@@ -167,9 +193,10 @@ public class AuthController {
     }
 
     /**
-     * Processes logout request
-     * @param session HTTP session to invalidate
-     * @return Redirect to login with logout flag
+     * Processes logout request by invalidating the session.
+     *
+     * @param session the HTTP session to invalidate
+     * @return redirect to login page with logout flag
      */
     @PostMapping("/logout")
     public String performLogout(HttpSession session) {

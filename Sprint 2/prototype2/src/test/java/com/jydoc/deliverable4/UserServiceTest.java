@@ -120,9 +120,11 @@ class UserServiceTest {
         when(userRepository.existsByUsername("testuser")).thenReturn(true);
 
         // Act & Assert
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> userService.registerNewUser(testUserDto));
-        assertEquals("Username already exists", exception.getMessage());
+        UserService.UsernameExistsException exception = assertThrows(
+                UserService.UsernameExistsException.class,
+                () -> userService.registerNewUser(testUserDto)
+        );
+        assertEquals("Username 'testuser' already exists", exception.getMessage());
 
         // Verify no user was saved
         verify(userRepository, never()).save(any(UserModel.class));
@@ -135,9 +137,9 @@ class UserServiceTest {
         when(userRepository.existsByEmail("test@example.com")).thenReturn(true);
 
         // Act & Assert
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+        UserService.EmailExistsException exception = assertThrows(UserService.EmailExistsException.class,
                 () -> userService.registerNewUser(testUserDto));
-        assertEquals("Email already registered", exception.getMessage());
+        assertEquals("Email 'test@example.com' is already registered", exception.getMessage());
 
         // Verify no attempt to save user
         verify(userRepository, never()).save(any(UserModel.class));

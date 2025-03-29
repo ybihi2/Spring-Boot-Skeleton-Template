@@ -30,11 +30,14 @@ import java.util.Optional;
  *
  * <p>This service handles:</p>
  * <ul>
- *   <li>User registration with validation</li>
- *   <li>User authentication via multiple methods</li>
- *   <li>User management operations (CRUD)</li>
- *   <li>Role assignment for users</li>
+ *   <li>User registration with comprehensive validation</li>
+ *   <li>Multiple authentication methods (Spring Security and direct validation)</li>
+ *   <li>Complete user lifecycle management (CRUD operations)</li>
+ *   <li>Role assignment and management</li>
+ *   <li>Account status tracking (enabled/disabled, locked/unlocked)</li>
  * </ul>
+ *
+ * <p>Transactions are properly managed with appropriate propagation levels.</p>
  */
 @Service
 @RequiredArgsConstructor
@@ -46,30 +49,35 @@ public class UserService {
      */
     private static final String DEFAULT_ROLE = "ROLE_USER";
 
-    // Dependencies injected via Lombok's @RequiredArgsConstructor
+    // Injected dependencies
     private final UserValidationHelper validationHelper;
     private final UserRepository userRepository;
     private final AuthorityRepository authorityRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
 
+    /* ======================== Public API Methods ======================== */
+
     /**
-     * Registers a new user after performing validation checks.
+     * Registers a new user after performing comprehensive validation checks.
      *
      * <p>Validation includes:</p>
      * <ul>
      *   <li>Null checks for all required fields</li>
      *   <li>Empty string validation</li>
+     *   <li>Format validation for email</li>
      *   <li>Duplicate username/email checks</li>
+     *   <li>Password complexity requirements</li>
      * </ul>
      *
      * @param userDto Data Transfer Object containing user registration information
      * @throws IllegalArgumentException if any validation fails
+     * @throws UsernameExistsException if username already exists
+     * @throws EmailExistsException if email already registered
      */
     @Transactional
     public void registerNewUser(UserDTO userDto) {
         validationHelper.validateUserRegistration(userDto);
-
         validateUserDto(userDto);
         checkForExistingCredentials(userDto);
 
@@ -83,7 +91,7 @@ public class UserService {
      * @param loginDto Contains username and password for authentication
      * @return Authenticated UserModel
      * @throws IllegalArgumentException if loginDto is null
-     * @throws AuthenticationException if authentication fails
+     * @throws AuthenticationException if authentication fails for any reason
      */
     @Transactional(readOnly = true)
     public UserModel authenticate(LoginDTO loginDto) {
@@ -94,14 +102,19 @@ public class UserService {
     }
 
     /**
-     * Validates user credentials against the database (alternative to Spring Security auth).
+     * Validates user credentials directly against the database (alternative to Spring Security auth).
      *
      * @param loginDto Contains credentials for validation
      * @return Validated UserModel
+     * @throws IllegalArgumentException if loginDto is null
      * @throws AuthenticationException if credentials are invalid or account is disabled
      */
     @Transactional(readOnly = true)
     public UserModel validateLogin(LoginDTO loginDto) {
+        if (loginDto == null) {
+            throw new IllegalArgumentException("Login credentials cannot be null");
+        }
+
         String credential = loginDto.username().trim().toLowerCase();
         String rawPassword = loginDto.password();
 
@@ -114,6 +127,84 @@ public class UserService {
         logger.info("Login successful for user: {}", user.getUsername());
         return user;
     }
+
+    /* ======================== User Management Methods ======================== */
+
+    /**
+     * Finds an active user by username or email.
+     *
+     * @param usernameOrEmail The username or email to search for
+     * @return Optional containing the user if found and active, empty otherwise
+     */
+    @Transactional(readOnly = true)
+    public Optional<UserModel> findActiveUser(String usernameOrEmail) {
+        return userRepository.findByUsernameOrEmail(usernameOrEmail.trim().toLowerCase())
+                .filter(UserModel::isEnabled);
+    }
+
+    /**
+     * Gets the total count of users in the system.
+     *
+     * @return The number of users in the system
+     */
+    @Transactional(readOnly = true)
+    public long getUserCount() {
+        return userRepository.count();
+    }
+
+    /**
+     * Checks if a user exists with the given ID.
+     *
+     * @param id The user ID to check
+     * @return true if user exists, false otherwise
+     */
+    @Transactional(readOnly = true)
+    public boolean existsById(Long id) {
+        return userRepository.existsById(id);
+    }
+
+    /**
+     * Retrieves all users in the system.
+     *
+     * @return List of all users
+     */
+    @Transactional(readOnly = true)
+    public List<UserModel> getAllUsers() {
+        return userRepository.findAll();
+    }
+
+    /**
+     * Finds a user by their ID.
+     *
+     * @param id The user ID to find
+     * @return Optional containing the user if found, empty otherwise
+     */
+    @Transactional(readOnly = true)
+    public Optional<UserModel> getUserById(Long id) {
+        return userRepository.findById(id);
+    }
+
+    /**
+     * Updates an existing user.
+     *
+     * @param user The user to update
+     */
+    @Transactional
+    public void updateUser(UserModel user) {
+        userRepository.save(user);
+    }
+
+    /**
+     * Deletes a user by ID.
+     *
+     * @param id The ID of the user to delete
+     */
+    @Transactional
+    public void deleteUser(Long id) {
+        userRepository.deleteById(id);
+    }
+
+    /* ======================== Authentication Methods ======================== */
 
     /**
      * Authenticates user credentials using Spring Security's authentication mechanisms.
@@ -138,42 +229,58 @@ public class UserService {
             handleAuthenticationFailure("Authentication failed - locked account: {}", username,
                     "Account is locked");
         }
-        return null; // This line is unreachable due to handleAuthenticationFailure throwing exception
+        return null; // Unreachable due to exception handling
     }
 
-    /* ================ Private Helper Methods ================ */
+    /* ======================== Private Helper Methods ======================== */
 
     /**
      * Validates the basic structure of the UserDTO.
+     *
+     * @param userDto The UserDTO to validate
+     * @throws IllegalArgumentException if any required field is null or empty
      */
     private void validateUserDto(UserDTO userDto) {
-        if (userDto == null) throw new IllegalArgumentException("UserDTO cannot be null");
-        if (userDto.getUsername() == null || userDto.getUsername().trim().isEmpty())
+        if (userDto == null) {
+            throw new IllegalArgumentException("UserDTO cannot be null");
+        }
+        if (userDto.getUsername() == null || userDto.getUsername().trim().isEmpty()) {
             throw new IllegalArgumentException("Username cannot be empty");
-        if (userDto.getPassword() == null || userDto.getPassword().trim().isEmpty())
+        }
+        if (userDto.getPassword() == null || userDto.getPassword().trim().isEmpty()) {
             throw new IllegalArgumentException("Password cannot be empty");
-        if (userDto.getEmail() == null || userDto.getEmail().trim().isEmpty())
+        }
+        if (userDto.getEmail() == null || userDto.getEmail().trim().isEmpty()) {
             throw new IllegalArgumentException("Email cannot be empty");
-        if (userDto.getFirstName() == null || userDto.getFirstName().trim().isEmpty())
+        }
+        if (userDto.getFirstName() == null || userDto.getFirstName().trim().isEmpty()) {
             throw new IllegalArgumentException("First name cannot be empty");
-        if (userDto.getLastName() == null || userDto.getLastName().trim().isEmpty())
+        }
+        if (userDto.getLastName() == null || userDto.getLastName().trim().isEmpty()) {
             throw new IllegalArgumentException("Last name cannot be empty");
+        }
     }
 
     /**
      * Checks for existing username or email in the system.
+     *
+     * @param userDto The UserDTO containing credentials to check
+     * @throws UsernameExistsException if username already exists
+     * @throws EmailExistsException if email already registered
      */
     private void checkForExistingCredentials(UserDTO userDto) {
         if (userRepository.existsByUsername(userDto.getUsername())) {
-            throw new IllegalArgumentException("Username already exists");
+            throw new UsernameExistsException(userDto.getUsername());
         }
         if (userRepository.existsByEmail(userDto.getEmail())) {
-            throw new IllegalArgumentException("Email already registered");
+            throw new EmailExistsException(userDto.getEmail());
         }
     }
 
     /**
      * Creates and persists a new user with encoded password and default role.
+     *
+     * @param user The user to persist
      */
     private void persistUser(UserModel user) {
         assignDefaultRole(user);
@@ -183,14 +290,17 @@ public class UserService {
 
     /**
      * Constructs a UserModel from DTO with proper formatting and password encoding.
+     *
+     * @param userDto The source UserDTO
+     * @return Fully constructed UserModel
      */
     private UserModel createUserFromDto(UserDTO userDto) {
         return UserModel.builder()
                 .username(userDto.getUsername().trim())
                 .password(passwordEncoder.encode(userDto.getPassword()))
                 .email(userDto.getEmail().toLowerCase().trim())
-                .firstName(userDto.getFirstName().trim()) // Added
-                .lastName(userDto.getLastName().trim())   // Added
+                .firstName(userDto.getFirstName().trim())
+                .lastName(userDto.getLastName().trim())
                 .enabled(true)
                 .accountNonExpired(true)
                 .credentialsNonExpired(true)
@@ -200,6 +310,10 @@ public class UserService {
 
     /**
      * Finds user by username or email credential.
+     *
+     * @param credential The username or email to search for
+     * @return Found UserModel
+     * @throws AuthenticationException if user not found
      */
     private UserModel findUserByCredential(String credential) {
         return userRepository.findByUsernameOrEmail(credential)
@@ -211,6 +325,10 @@ public class UserService {
 
     /**
      * Validates that the provided password matches the user's stored password.
+     *
+     * @param user The user to validate
+     * @param rawPassword The password to check
+     * @throws AuthenticationException if passwords don't match
      */
     private void validateUserPassword(UserModel user, String rawPassword) {
         if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
@@ -221,6 +339,9 @@ public class UserService {
 
     /**
      * Verifies that the user account is enabled.
+     *
+     * @param user The user to check
+     * @throws AuthenticationException if account is disabled
      */
     private void checkAccountEnabled(UserModel user) {
         if (!user.isEnabled()) {
@@ -231,6 +352,10 @@ public class UserService {
 
     /**
      * Performs Spring Security authentication.
+     *
+     * @param username The username to authenticate
+     * @param password The password to verify
+     * @return Authentication object
      */
     private Authentication performSpringAuthentication(String username, String password) {
         return authenticationManager.authenticate(
@@ -240,6 +365,10 @@ public class UserService {
 
     /**
      * Retrieves user after successful Spring authentication.
+     *
+     * @param username The username to find
+     * @return Found UserModel
+     * @throws AuthenticationException if user not found (shouldn't happen after successful auth)
      */
     private UserModel findAuthenticatedUser(String username) {
         return userRepository.findByUsername(username)
@@ -251,6 +380,11 @@ public class UserService {
 
     /**
      * Handles authentication failures consistently.
+     *
+     * @param logMessage The log message template
+     * @param username The username that failed authentication
+     * @param exceptionMessage The exception message to throw
+     * @throws AuthenticationException always
      */
     private void handleAuthenticationFailure(String logMessage, String username, String exceptionMessage) {
         logger.warn(logMessage, username);
@@ -259,16 +393,20 @@ public class UserService {
 
     /**
      * Assigns the default role to a user (must be called within a transaction).
+     *
+     * @param user The user to assign the role to
      */
     @Transactional(propagation = Propagation.MANDATORY)
     protected void assignDefaultRole(UserModel user) {
         AuthorityModel authority = authorityRepository.findByAuthority(DEFAULT_ROLE)
-                .orElseGet(() -> createAndSaveNewAuthority());
+                .orElseGet(this::createAndSaveNewAuthority);
         user.addAuthority(authority);
     }
 
     /**
      * Creates and persists a new authority role.
+     *
+     * @return The newly created AuthorityModel
      */
     private AuthorityModel createAndSaveNewAuthority() {
         AuthorityModel newRole = new AuthorityModel(DEFAULT_ROLE);
@@ -276,69 +414,10 @@ public class UserService {
         return authorityRepository.save(newRole);
     }
 
-    /* ================ User Management Methods ================ */
+    /* ======================== Custom Exceptions ======================== */
 
     /**
-     * Finds an active user by username or email.
-     */
-    @Transactional(readOnly = true)
-    public Optional<UserModel> findActiveUser(String usernameOrEmail) {
-        return userRepository.findByUsernameOrEmail(usernameOrEmail.trim().toLowerCase())
-                .filter(UserModel::isEnabled);
-    }
-
-    /**
-     * Gets the total count of users in the system.
-     */
-    @Transactional(readOnly = true)
-    public long getUserCount() {
-        return userRepository.count();
-    }
-
-    /**
-     * Checks if a user exists with the given ID.
-     */
-    @Transactional(readOnly = true)
-    public boolean existsById(Long id) {
-        return userRepository.existsById(id);
-    }
-
-    /**
-     * Retrieves all users in the system.
-     */
-    @Transactional(readOnly = true)
-    public List<UserModel> getAllUsers() {
-        return userRepository.findAll();
-    }
-
-    /**
-     * Finds a user by their ID.
-     */
-    @Transactional(readOnly = true)
-    public Optional<UserModel> getUserById(Long id) {
-        return userRepository.findById(id);
-    }
-
-    /**
-     * Updates an existing user.
-     */
-    @Transactional
-    public void updateUser(UserModel user) {
-        userRepository.save(user);
-    }
-
-    /**
-     * Deletes a user by ID.
-     */
-    @Transactional
-    public void deleteUser(Long id) {
-        userRepository.deleteById(id);
-    }
-
-    /* ================ Custom Exceptions ================ */
-
-    /**
-     * Exception thrown when authentication fails.
+     * Exception thrown when authentication fails for any reason.
      */
     public static class AuthenticationException extends RuntimeException {
         public AuthenticationException(String message) {

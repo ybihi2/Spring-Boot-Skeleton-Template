@@ -32,23 +32,41 @@ class CustomUserDetailsTest {
     class ConstructorTests {
 
         @Test
-        @DisplayName("Should create instance with valid parameters")
         void shouldCreateInstanceWithValidParameters() {
+            // Arrange
+            Long userId = 1L;
+            String username = "testUser";
+            String password = "securePassword";
+            boolean enabled = true;
+            boolean accountNonExpired = true;
+            boolean accountNonLocked = true;
+            boolean credentialsNonExpired = true;
+            Collection<SimpleGrantedAuthority> expectedAuthorities =
+                    Arrays.asList(new SimpleGrantedAuthority("ROLE_USER"));
+
+            // Act
             CustomUserDetails userDetails = new CustomUserDetails(
-                    USER_ID, USERNAME, PASSWORD,
-                    true, true, true, true,
-                    AUTHORITIES
+                    userId,
+                    username,
+                    password,
+                    enabled,
+                    accountNonExpired,
+                    accountNonLocked,
+                    credentialsNonExpired,
+                    expectedAuthorities
             );
 
-            assertNotNull(userDetails);
-            assertEquals(USER_ID, userDetails.getUserId());
-            assertEquals(USERNAME, userDetails.getUsername());
-            assertEquals(PASSWORD, userDetails.getPassword());
+            // Assert
+            assertEquals(userId, userDetails.getUserId());
+            assertEquals(username, userDetails.getUsername());
+            assertEquals(password, userDetails.getPassword());
             assertTrue(userDetails.isEnabled());
             assertTrue(userDetails.isAccountNonExpired());
             assertTrue(userDetails.isAccountNonLocked());
             assertTrue(userDetails.isCredentialsNonExpired());
-            assertEquals(AUTHORITIES, userDetails.getAuthorities());
+
+            // This is the key assertion that fixes the original error
+            assertIterableEquals(expectedAuthorities, userDetails.getAuthorities());
         }
 
         @Test
