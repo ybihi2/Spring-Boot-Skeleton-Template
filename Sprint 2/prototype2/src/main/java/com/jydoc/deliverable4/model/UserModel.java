@@ -5,6 +5,8 @@ import lombok.*;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -93,6 +95,32 @@ public class UserModel {
     @Fetch(FetchMode.JOIN)
     @Builder.Default
     private Set<AuthorityModel> authorities = new HashSet<>();
+
+    /**
+     * Returns an unmodifiable defensive copy of the authorities set.
+     * This protects the internal representation while maintaining immutability guarantees.
+     *
+     * @return unmodifiable set containing a copy of the authorities
+     */
+    public Set<AuthorityModel> getAuthorities() {
+        return Collections.unmodifiableSet(new HashSet<>(this.authorities));
+    }
+
+    /**
+     * Safely replaces the authorities collection with a copy of the input.
+     * Null input results in an empty set.
+     *
+     * @param authorities collection of authorities to set
+     */
+    public void setAuthorities(Collection<AuthorityModel> authorities) {
+        this.authorities = authorities != null
+                ? new HashSet<>(authorities)
+                : new HashSet<>();
+    }
+
+
+
+
 
     /**
      * Adds an authority to the user and maintains the bidirectional relationship.
