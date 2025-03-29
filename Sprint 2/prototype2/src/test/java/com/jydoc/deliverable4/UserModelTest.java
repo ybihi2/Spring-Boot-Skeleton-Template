@@ -39,6 +39,8 @@ class UserModelTest {
                 .username("testuser")
                 .password("encodedPassword")
                 .email("test@example.com")
+                .firstName("Test")    // Added
+                .lastName("User")     // Added
                 .build();
 
         // When
@@ -52,6 +54,8 @@ class UserModelTest {
         assertEquals("testuser", found.getUsername());
         assertEquals("encodedPassword", found.getPassword());
         assertEquals("test@example.com", found.getEmail());
+        assertEquals("Test", found.getFirstName());  // Added
+        assertEquals("User", found.getLastName());   // Added
     }
 
     @Test
@@ -61,6 +65,8 @@ class UserModelTest {
             UserModel user1 = UserModel.builder()
                     .username("uniqueuser")
                     .password("password1")
+                    .firstName("Unique")  // Added
+                    .lastName("User")     // Added
                     .build();
             entityManager.persist(user1);
         });
@@ -71,6 +77,8 @@ class UserModelTest {
                 UserModel user2 = UserModel.builder()
                         .username("uniqueuser")
                         .password("password2")
+                        .firstName("Unique2")  // Added
+                        .lastName("User2")     // Added
                         .build();
                 entityManager.persist(user2);
                 entityManager.flush(); // Explicit flush to force immediate constraint check
@@ -86,6 +94,8 @@ class UserModelTest {
                     .username("user1")
                     .password("password1")
                     .email("unique@example.com")
+                    .firstName("User1")  // Added
+                    .lastName("One")     // Added
                     .build();
             entityManager.persist(user1);
         });
@@ -97,8 +107,11 @@ class UserModelTest {
                         .username("user2")
                         .password("password2")
                         .email("unique@example.com")
+                        .firstName("User2")  // Added
+                        .lastName("Two")     // Added
                         .build();
                 entityManager.persist(user2);
+                entityManager.flush(); // Explicit flush
             });
         });
     }
@@ -110,7 +123,9 @@ class UserModelTest {
         UserModel user = UserModel.builder()
                 .username("noemail")
                 .password("password")
-                .email(null)
+                .email(null)         // Email is optional
+                .firstName("No")     // Added
+                .lastName("Email")   // Added
                 .build();
 
         // When
@@ -129,6 +144,8 @@ class UserModelTest {
         UserModel user = UserModel.builder()
                 .username("defaultuser")
                 .password("password")
+                .firstName("Default")  // Added
+                .lastName("User")      // Added
                 .build();
 
         assertAll(
@@ -147,6 +164,8 @@ class UserModelTest {
             UserModel user = UserModel.builder()
                     .username("a".repeat(51))
                     .password("password")
+                    .firstName("Length")  // Added
+                    .lastName("Test")     // Added
                     .build();
             entityManager.persist(user);
             entityManager.flush();
@@ -157,6 +176,8 @@ class UserModelTest {
             UserModel user = UserModel.builder()
                     .username("lengthuser")
                     .password("a".repeat(101))
+                    .firstName("Length")  // Added
+                    .lastName("Test")     // Added
                     .build();
             entityManager.persist(user);
             entityManager.flush();
@@ -168,6 +189,32 @@ class UserModelTest {
                     .username("emailuser")
                     .password("password")
                     .email("a".repeat(90) + "@example.com") // > 100 chars
+                    .firstName("Email")  // Added
+                    .lastName("Test")    // Added
+                    .build();
+            entityManager.persist(user);
+            entityManager.flush();
+        });
+
+        // Test firstName max length (50)
+        assertThrows(Exception.class, () -> {
+            UserModel user = UserModel.builder()
+                    .username("firstuser")
+                    .password("password")
+                    .firstName("a".repeat(51))  // Added
+                    .lastName("Test")           // Added
+                    .build();
+            entityManager.persist(user);
+            entityManager.flush();
+        });
+
+        // Test lastName max length (50)
+        assertThrows(Exception.class, () -> {
+            UserModel user = UserModel.builder()
+                    .username("lastuser")
+                    .password("password")
+                    .firstName("Test")         // Added
+                    .lastName("a".repeat(51))  // Added
                     .build();
             entityManager.persist(user);
             entityManager.flush();
@@ -181,6 +228,8 @@ class UserModelTest {
                 .username("builderuser")
                 .password("password")
                 .email("builder@example.com")
+                .firstName("Builder")  // Added
+                .lastName("User")      // Added
                 .enabled(false)
                 .accountNonExpired(false)
                 .credentialsNonExpired(false)
@@ -192,6 +241,8 @@ class UserModelTest {
                 () -> assertEquals("builderuser", user.getUsername()),
                 () -> assertEquals("password", user.getPassword()),
                 () -> assertEquals("builder@example.com", user.getEmail()),
+                () -> assertEquals("Builder", user.getFirstName()),  // Added
+                () -> assertEquals("User", user.getLastName()),      // Added
                 () -> assertFalse(user.isEnabled()),
                 () -> assertFalse(user.isAccountNonExpired()),
                 () -> assertFalse(user.isCredentialsNonExpired()),
@@ -205,6 +256,8 @@ class UserModelTest {
         UserModel original = UserModel.builder()
                 .username("original")
                 .password("password")
+                .firstName("Original")  // Added
+                .lastName("User")       // Added
                 .build();
 
         // When
@@ -218,7 +271,35 @@ class UserModelTest {
                 () -> assertEquals("original", original.getUsername()),
                 () -> assertTrue(original.isEnabled()),
                 () -> assertEquals("modified", modified.getUsername()),
-                () -> assertFalse(modified.isEnabled())
+                () -> assertFalse(modified.isEnabled()),
+                () -> assertEquals("Original", modified.getFirstName()),  // Added
+                () -> assertEquals("User", modified.getLastName())        // Added
         );
+    }
+
+    @Test
+    @Transactional
+    void testFirstNameAndLastNameNotNull() {
+        // Test missing firstName
+        assertThrows(Exception.class, () -> {
+            UserModel user = UserModel.builder()
+                    .username("nofirst")
+                    .password("password")
+                    .lastName("User")  // Only lastName
+                    .build();
+            entityManager.persist(user);
+            entityManager.flush();
+        });
+
+        // Test missing lastName
+        assertThrows(Exception.class, () -> {
+            UserModel user = UserModel.builder()
+                    .username("nolast")
+                    .password("password")
+                    .firstName("No")  // Only firstName
+                    .build();
+            entityManager.persist(user);
+            entityManager.flush();
+        });
     }
 }

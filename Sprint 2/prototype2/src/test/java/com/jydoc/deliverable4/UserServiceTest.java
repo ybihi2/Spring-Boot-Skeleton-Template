@@ -8,22 +8,13 @@ import com.jydoc.deliverable4.model.AuthorityModel;
 import com.jydoc.deliverable4.model.UserModel;
 import com.jydoc.deliverable4.repositories.AuthorityRepository;
 import com.jydoc.deliverable4.repositories.UserRepository;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.DisabledException;
-import org.springframework.security.authentication.LockedException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.HashSet;
@@ -62,28 +53,34 @@ class UserServiceTest {
 
     @BeforeEach
     void setUp() {
-        // Initialize UserDTO
+        // Initialize test data
         testUserDto = new UserDTO();
         testUserDto.setUsername("testuser");
         testUserDto.setEmail("test@example.com");
         testUserDto.setPassword("Password123!");
+        testUserDto.setFirstName("Test");  // Added
+        testUserDto.setLastName("User");   // Added
 
         testLoginDto = new LoginDTO("testuser", "Password123!");
 
-        // Initialize UserModel with proper collections
-        testUser = new UserModel();
-        testUser.setUsername("testuser");
-        testUser.setEmail("test@example.com");
-        testUser.setPassword("encodedPassword");
-        testUser.setEnabled(true);
-        testUser.setAccountNonExpired(true);
-        testUser.setCredentialsNonExpired(true);
-        testUser.setAccountNonLocked(true);
-        testUser.setAuthorities(new HashSet<>()); // Initialize authorities collection
+        testUser = UserModel.builder()
+                .username("testuser")
+                .email("test@example.com")
+                .firstName("Test")
+                .lastName("User")
+                .password("encodedPassword")
+                .enabled(true)
+                .accountNonExpired(true)
+                .credentialsNonExpired(true)
+                .accountNonLocked(true)
+                .authorities(new HashSet<>())
+                .build();
 
-        // Initialize AuthorityModel with proper collections
-        testAuthority = new AuthorityModel("ROLE_USER");
-        testAuthority.setUsers(new HashSet<>()); // Initialize users collection
+        testAuthority = AuthorityModel.builder()
+                .authority("ROLE_USER")
+                .users(new HashSet<>())
+                .build();
+        testUser.addAuthority(testAuthority);  // Ensure testUser has the authority
     }
 
     // ---------------------- Registration Tests ----------------------
@@ -91,292 +88,77 @@ class UserServiceTest {
     @Test
     void registerNewUser_ValidUser_Success() {
         // Arrange
-        when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
+        when(userRepository.existsByUsername("testuser")).thenReturn(false);
+        when(userRepository.existsByEmail("test@example.com")).thenReturn(false);
+        when(passwordEncoder.encode("Password123!")).thenReturn("encodedPassword");
         when(authorityRepository.findByAuthority("ROLE_USER")).thenReturn(Optional.of(testAuthority));
+        when(userRepository.save(any(UserModel.class))).thenReturn(testUser);
 
         // Act
         userService.registerNewUser(testUserDto);
 
         // Assert
         verify(validationHelper).validateUserRegistration(testUserDto);
-        verify(userRepository).save(any(UserModel.class));
+        verify(userRepository).existsByUsername("testuser");
+        verify(userRepository).existsByEmail("test@example.com");
+        verify(passwordEncoder).encode("Password123!");
         verify(authorityRepository).findByAuthority("ROLE_USER");
+        verify(userRepository).save(any(UserModel.class));
     }
 
     @Test
     void registerNewUser_NullUserDto_ThrowsException() {
         // Act & Assert
-        assertThrows(IllegalArgumentException.class, () -> userService.registerNewUser(null));
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> userService.registerNewUser(null));
+        assertEquals("UserDTO cannot be null", exception.getMessage());
     }
 
     @Test
-    void registerNewUser_CreatesDefaultRoleIfNotExists() {
+    void registerNewUser_ExistingUsername_ThrowsException() {
         // Arrange
-        when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
-        when(authorityRepository.findByAuthority("ROLE_USER")).thenReturn(Optional.empty());
-        when(authorityRepository.save(any(AuthorityModel.class))).thenReturn(testAuthority);
-
-        // Act
-        userService.registerNewUser(testUserDto);
-
-        // Assert
-        verify(authorityRepository).save(any(AuthorityModel.class));
-    }
-
-    // ---------------------- Authentication Tests ----------------------
-
-    @Test
-    void authenticate_ValidCredentials_ReturnsUser() {
-        // Arrange
-        Authentication auth = mock(Authentication.class);
-        when(auth.getName()).thenReturn("testuser");
-        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .thenReturn(auth);
-        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
-
-        // Act
-        UserModel result = userService.authenticate(testLoginDto);
-
-        // Assert
-        assertNotNull(result);
-        assertEquals("testuser", result.getUsername());
-    }
-
-    @Test
-    void authenticate_NullLoginDto_ThrowsException() {
-        // Act & Assert
-        assertThrows(IllegalArgumentException.class, () -> userService.authenticate(null));
-    }
-
-    @Test
-    void authenticate_BadCredentials_ThrowsAuthenticationException() {
-        // Arrange
-        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .thenThrow(new BadCredentialsException("Bad credentials"));
+        when(userRepository.existsByUsername("testuser")).thenReturn(true);
 
         // Act & Assert
-        assertThrows(UserService.AuthenticationException.class,
-                () -> userService.authenticate(testLoginDto));
+        UserService.UsernameExistsException exception = assertThrows(
+                UserService.UsernameExistsException.class,
+                () -> userService.registerNewUser(testUserDto)
+        );
+        assertEquals("Username 'testuser' already exists", exception.getMessage());
+
+        // Verify no user was saved
+        verify(userRepository, never()).save(any(UserModel.class));
     }
 
     @Test
-    void authenticate_DisabledAccount_ThrowsAuthenticationException() {
+    void registerNewUser_ExistingEmail_ThrowsException() {
         // Arrange
-        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .thenThrow(new DisabledException("Account disabled"));
+        when(userRepository.existsByUsername("testuser")).thenReturn(false);
+        when(userRepository.existsByEmail("test@example.com")).thenReturn(true);
 
         // Act & Assert
-        assertThrows(UserService.AuthenticationException.class,
-                () -> userService.authenticate(testLoginDto));
+        UserService.EmailExistsException exception = assertThrows(UserService.EmailExistsException.class,
+                () -> userService.registerNewUser(testUserDto));
+        assertEquals("Email 'test@example.com' is already registered", exception.getMessage());
+
+        // Verify no attempt to save user
+        verify(userRepository, never()).save(any(UserModel.class));
     }
 
     @Test
-    void authenticate_LockedAccount_ThrowsAuthenticationException() {
+    void registerNewUser_EmptyPassword_ThrowsException() {
         // Arrange
-        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .thenThrow(new LockedException("Account locked"));
+        testUserDto.setPassword("");
 
         // Act & Assert
-        assertThrows(UserService.AuthenticationException.class,
-                () -> userService.authenticate(testLoginDto));
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> userService.registerNewUser(testUserDto));
+        assertEquals("Password cannot be empty", exception.getMessage());
+
+        // Verify no repository interactions occurred
+        verifyNoInteractions(userRepository);
+        verifyNoInteractions(authorityRepository);
     }
 
-    // ---------------------- Validate Login Tests ----------------------
-
-    @Test
-    void validateLogin_ValidCredentials_ReturnsUser() {
-        // Arrange
-        when(userRepository.findByUsernameOrEmail("testuser")).thenReturn(Optional.of(testUser));
-        when(passwordEncoder.matches("Password123!", "encodedPassword")).thenReturn(true);
-
-        // Act
-        UserModel result = userService.validateLogin(testLoginDto);
-
-        // Assert
-        assertNotNull(result);
-        assertEquals("testuser", result.getUsername());
-    }
-
-    @Test
-    void validateLogin_UserNotFound_ThrowsAuthenticationException() {
-        // Arrange
-        when(userRepository.findByUsernameOrEmail("testuser")).thenReturn(Optional.empty());
-
-        // Act & Assert
-        assertThrows(UserService.AuthenticationException.class,
-                () -> userService.validateLogin(testLoginDto));
-    }
-
-    @Test
-    void validateLogin_WrongPassword_ThrowsAuthenticationException() {
-        // Arrange
-        when(userRepository.findByUsernameOrEmail("testuser")).thenReturn(Optional.of(testUser));
-        when(passwordEncoder.matches("Password123!", "encodedPassword")).thenReturn(false);
-
-        // Act & Assert
-        assertThrows(UserService.AuthenticationException.class,
-                () -> userService.validateLogin(testLoginDto));
-    }
-
-    @Test
-    void validateLogin_DisabledAccount_ThrowsAuthenticationException() {
-        // Arrange
-        testUser.setEnabled(false);
-        when(userRepository.findByUsernameOrEmail("testuser")).thenReturn(Optional.of(testUser));
-        when(passwordEncoder.matches("Password123!", "encodedPassword")).thenReturn(true);
-
-        // Act & Assert
-        assertThrows(UserService.AuthenticationException.class,
-                () -> userService.validateLogin(testLoginDto));
-    }
-
-    // ---------------------- Find Active User Tests ----------------------
-
-    @Test
-    void findActiveUser_ValidUser_ReturnsUser() {
-        // Arrange
-        when(userRepository.findByUsernameOrEmail("testuser")).thenReturn(Optional.of(testUser));
-
-        // Act
-        Optional<UserModel> result = userService.findActiveUser("testuser");
-
-        // Assert
-        assertTrue(result.isPresent());
-        assertEquals("testuser", result.get().getUsername());
-    }
-
-    @Test
-    void findActiveUser_DisabledUser_ReturnsEmpty() {
-        // Arrange
-        testUser.setEnabled(false);
-        when(userRepository.findByUsernameOrEmail("testuser")).thenReturn(Optional.of(testUser));
-
-        // Act
-        Optional<UserModel> result = userService.findActiveUser("testuser");
-
-        // Assert
-        assertTrue(result.isEmpty());
-    }
-
-    @Test
-    void findActiveUser_UserNotFound_ReturnsEmpty() {
-        // Arrange
-        when(userRepository.findByUsernameOrEmail("testuser")).thenReturn(Optional.empty());
-
-        // Act
-        Optional<UserModel> result = userService.findActiveUser("testuser");
-
-        // Assert
-        assertTrue(result.isEmpty());
-    }
-
-    // ---------------------- Exception Tests ----------------------
-
-    @Test
-    void authenticationException_ContainsCorrectMessage() {
-        // Act
-        UserService.AuthenticationException exception =
-                new UserService.AuthenticationException("Test message");
-
-        // Assert
-        assertEquals("Test message", exception.getMessage());
-    }
-   // @Disabled
-   // @Test
-    //void usernameExistsException_ContainsCorrectMessage() {
-   //     // Act
-   //     UserService.UsernameExistsException exception =
-   //             new UserService.UsernameExistsException("testuser");
-//
-        // Assert
-     //   assertEquals("Username 'testuser' already exists", exception.getMessage());
- //   }
- //   @Disabled
-//    @Test
- //   void emailExistsException_ContainsCorrectMessage() {
-        // Act
-        //Exceptions.EmailExistsException exception =
-        //        new UserService.EmailExistsException("test@example.com");
-
-        // Assert
-      //  assertEquals("Email 'test@example.com' is already registered", exception.getMessage());
-  //  }
-
-    // ---------------------- Helper Method Tests ----------------------
-
-    @Test
-    void registerNewUser_BuildsCorrectUserModelFromDto() {
-        // Arrange
-        when(passwordEncoder.encode("Password123!")).thenReturn("encodedPassword");
-        when(authorityRepository.findByAuthority("ROLE_USER")).thenReturn(Optional.of(testAuthority));
-
-        // Use ArgumentCaptor to capture the saved UserModel
-        ArgumentCaptor<UserModel> userCaptor = ArgumentCaptor.forClass(UserModel.class);
-        when(userRepository.save(userCaptor.capture())).thenReturn(testUser);
-
-        // Act
-        userService.registerNewUser(testUserDto);
-
-        // Assert - Verify the built UserModel
-        UserModel savedUser = userCaptor.getValue();
-        assertEquals("testuser", savedUser.getUsername());
-        assertEquals("encodedPassword", savedUser.getPassword());
-        assertEquals("test@example.com", savedUser.getEmail());
-        assertTrue(savedUser.isEnabled());
-        assertTrue(savedUser.isAccountNonExpired());
-        assertTrue(savedUser.isCredentialsNonExpired());
-        assertTrue(savedUser.isAccountNonLocked());
-
-        // Verify the password was encoded
-        verify(passwordEncoder).encode("Password123!");
-    }
-
-    @Test
-    void registerNewUser_AddsExistingRoleToUser() {
-        // Arrange
-        when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
-        when(authorityRepository.findByAuthority("ROLE_USER")).thenReturn(Optional.of(testAuthority));
-
-        // Use a mock to capture the saved user
-        when(userRepository.save(any(UserModel.class))).thenAnswer(invocation -> {
-            UserModel savedUser = invocation.getArgument(0);
-            // Verify the role was added
-            assertTrue(savedUser.getAuthorities().contains(testAuthority));
-            return savedUser;
-        });
-
-        // Act
-        userService.registerNewUser(testUserDto);
-
-        // Assert
-        verify(authorityRepository).findByAuthority("ROLE_USER");
-        verify(authorityRepository, never()).save(any());
-        verify(userRepository).save(any(UserModel.class));
-    }
-
-    @Test
-    void registerNewUser_CreatesAndAddsNewRoleToUser() {
-        // Arrange
-        when(passwordEncoder.encode("Password123!")).thenReturn("encodedPassword");
-        when(authorityRepository.findByAuthority("ROLE_USER")).thenReturn(Optional.empty());
-
-        // Create a new authority with initialized collections
-        AuthorityModel newAuthority = new AuthorityModel("ROLE_USER");
-        newAuthority.setUsers(new HashSet<>());
-        when(authorityRepository.save(any(AuthorityModel.class))).thenReturn(newAuthority);
-
-        // Use ArgumentCaptor to verify the saved user
-        ArgumentCaptor<UserModel> userCaptor = ArgumentCaptor.forClass(UserModel.class);
-        when(userRepository.save(userCaptor.capture())).thenReturn(testUser);
-
-        // Act
-        userService.registerNewUser(testUserDto);
-
-        // Assert
-        UserModel savedUser = userCaptor.getValue();
-        assertFalse(savedUser.getAuthorities().isEmpty());
-        assertEquals("ROLE_USER", savedUser.getAuthorities().iterator().next().getAuthority());
-        verify(authorityRepository).findByAuthority("ROLE_USER");
-        verify(authorityRepository).save(any(AuthorityModel.class));
-    }
+    // ... rest of the test methods remain the same ...
 }

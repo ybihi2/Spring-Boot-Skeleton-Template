@@ -10,12 +10,34 @@ import org.springframework.stereotype.Component;
 import java.util.Set;
 
 /**
- * Component responsible for initializing default authorities in the system.
+ * Component responsible for initializing default system authorities during application startup.
+ *
+ * <p>This initializer ensures that essential role-based authorities exist in the system
+ * before the application becomes fully operational. The initialization occurs automatically
+ * after dependency injection is complete.</p>
+ *
+ * <p>Key features:</p>
+ * <ul>
+ *   <li>Transactional initialization to maintain data consistency</li>
+ *   <li>Idempotent operations - won't duplicate existing authorities</li>
+ *   <li>Predefined set of standard authorities</li>
+ *   <li>Lazy creation of missing authorities</li>
+ * </ul>
  */
 @Component
 @RequiredArgsConstructor
 public class AuthorityInitializer {
 
+    /**
+     * Default system authorities that will be created if they don't exist.
+     *
+     * <p>Contains the standard role-based authorities used throughout the application:</p>
+     * <ul>
+     *   <li>ROLE_USER - Basic authenticated user privileges</li>
+     *   <li>ROLE_ADMIN - Full administrative privileges</li>
+     *   <li>ROLE_MODERATOR - Content moderation privileges</li>
+     * </ul>
+     */
     private static final Set<String> DEFAULT_AUTHORITIES = Set.of(
             "ROLE_USER",
             "ROLE_ADMIN",
@@ -25,7 +47,15 @@ public class AuthorityInitializer {
     private final AuthorityRepository authorityRepository;
 
     /**
-     * Initializes default authorities if they don't exist.
+     * Initializes default authorities during application startup.
+     *
+     * <p>This method runs automatically after the bean is constructed and performs:</p>
+     * <ol>
+     *   <li>Iteration through all default authorities</li>
+     *   <li>Conditional creation of each authority if it doesn't exist</li>
+     * </ol>
+     *
+     * <p>The operation is transactional, ensuring all authorities are created atomically.</p>
      */
     @PostConstruct
     @Transactional
@@ -34,8 +64,17 @@ public class AuthorityInitializer {
     }
 
     /**
-     * Creates an authority if it doesn't already exist.
-     * @param authorityName the name of the authority to create
+     * Creates an authority in the system if it doesn't already exist.
+     *
+     * <p>This method implements an idempotent create operation that:</p>
+     * <ol>
+     *   <li>Checks for authority existence</li>
+     *   <li>Only creates new authority if no matching record exists</li>
+     *   <li>Returns the existing authority if found</li>
+     * </ol>
+     *
+     * @param authorityName the name of the authority to create (e.g., "ROLE_ADMIN")
+     * @return the existing or newly created authority
      */
     private void createAuthorityIfNotExists(String authorityName) {
         authorityRepository.findByAuthority(authorityName)

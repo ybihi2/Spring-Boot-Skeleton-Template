@@ -110,13 +110,13 @@ public class Deliverable4Application {
 		String appName = env.getProperty("spring.application.name", "application");
 
 		// Format and display startup information
-		System.out.printf("\n----------------------------------------------------------\n" +
-						"Application '%s' is running!\n\n" +
-						"Access URLs:\n" +
-						"Local: \t\t%s://localhost:%s%s\n" +
-						"External: \t%s://%s:%s%s\n" +
-						"Profile(s): \t%s\n" +
-						"----------------------------------------------------------\n",
+		System.out.printf("%n----------------------------------------------------------%n" +
+						"Application '%s' is running!%n%n" +
+						"Access URLs:%n" +
+						"Local: \t\t%s://localhost:%s%s%n" +
+						"External: \t%s://%s:%s%s%n" +
+						"Profile(s): \t%s%n" +
+						"----------------------------------------------------------%n",
 				appName,
 				protocol,
 				serverPort,

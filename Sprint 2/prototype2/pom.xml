@@ -113,6 +113,12 @@
 			<version>3.0.2</version>
 		</dependency>
 
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <version>6.0.0</version>
+            <scope>provided</scope>
+        </dependency>
 		<!-- Hibernate Validator (implementation) -->
 		<dependency>
 			<groupId>org.hibernate.validator</groupId>
@@ -158,7 +164,17 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-test</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
 
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>3.26.3</version>
+            <scope>test</scope>
+        </dependency>
 
 	</dependencies>
 
@@ -174,6 +190,16 @@
 							<artifactId>lombok</artifactId>
 						</path>
 					</annotationProcessorPaths>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>com.github.spotbugs</groupId>
+				<artifactId>spotbugs-maven-plugin</artifactId>
+				<version>4.8.6.0</version> <!-- Check for latest version -->
+				<configuration>
+					<effort>Max</effort> <!-- More thorough analysis -->
+					<threshold>Low</threshold> <!-- Report even minor issues -->
+					<failOnError>true</failOnError> <!-- Fail build on critical bugs -->
 				</configuration>
 			</plugin>
 			<plugin>

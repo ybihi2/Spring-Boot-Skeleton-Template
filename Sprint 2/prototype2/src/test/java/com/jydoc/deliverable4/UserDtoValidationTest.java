@@ -12,6 +12,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -21,6 +23,8 @@ import static org.junit.jupiter.api.Assertions.*;
 //NOTE: Passes all tests
 
 @DisplayName("UserDTO Validation Tests")
+@SpringBootTest
+@ActiveProfiles("test")
 class UserDtoValidationTest {
 
     private static Validator validator;

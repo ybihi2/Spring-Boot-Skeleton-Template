@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.util.Collections;
 import java.util.Optional;
@@ -16,6 +17,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
+@ActiveProfiles("test")
 class UserRepositoryTest {
 
     @Autowired
@@ -37,6 +39,8 @@ class UserRepositoryTest {
                 .username("testuser")
                 .password("password")
                 .email("test@example.com")
+                .firstName("Test")    // Added
+                .lastName("User")     // Added
                 .accountNonExpired(true)
                 .accountNonLocked(true)
                 .credentialsNonExpired(true)
@@ -53,6 +57,8 @@ class UserRepositoryTest {
         Optional<UserModel> foundUser = userRepository.findById(testUser.getId());
         assertTrue(foundUser.isPresent());
         assertEquals(testUser.getUsername(), foundUser.get().getUsername());
+        assertEquals("Test", foundUser.get().getFirstName());  // Added
+        assertEquals("User", foundUser.get().getLastName());   // Added
     }
 
     @Test
@@ -61,11 +67,15 @@ class UserRepositoryTest {
                 .username("newuser")
                 .password("newpass")
                 .email("new@example.com")
+                .firstName("New")    // Added
+                .lastName("User")    // Added
                 .build();
 
         UserModel savedUser = userRepository.save(newUser);
         assertNotNull(savedUser.getId());
         assertEquals(newUser.getUsername(), savedUser.getUsername());
+        assertEquals("New", savedUser.getFirstName());  // Added
+        assertEquals("User", savedUser.getLastName());  // Added
     }
 
     // Unique constraint tests
@@ -75,6 +85,8 @@ class UserRepositoryTest {
                 .username("testuser")  // duplicate username
                 .password("password")
                 .email("different@example.com")
+                .firstName("Diff")    // Added
+                .lastName("User")     // Added
                 .build();
 
         assertThrows(DataIntegrityViolationException.class, () -> {
@@ -88,6 +100,8 @@ class UserRepositoryTest {
                 .username("differentuser")
                 .password("password")
                 .email("test@example.com")  // duplicate email
+                .firstName("Diff")    // Added
+                .lastName("User")     // Added
                 .build();
 
         assertThrows(DataIntegrityViolationException.class, () -> {
@@ -101,6 +115,8 @@ class UserRepositoryTest {
         Optional<UserModel> foundUser = userRepository.findByUsername("testuser");
         assertTrue(foundUser.isPresent());
         assertEquals(testUser.getEmail(), foundUser.get().getEmail());
+        assertEquals("Test", foundUser.get().getFirstName());  // Added
+        assertEquals("User", foundUser.get().getLastName());   // Added
     }
 
     @Test
@@ -128,6 +144,8 @@ class UserRepositoryTest {
         assertTrue(foundUser.isPresent());
         assertFalse(foundUser.get().getAuthorities().isEmpty());
         assertEquals("ROLE_USER", foundUser.get().getAuthorities().iterator().next().getAuthority());
+        assertEquals("Test", foundUser.get().getFirstName());  // Added
+        assertEquals("User", foundUser.get().getLastName());   // Added
     }
 
     @Test
@@ -135,14 +153,17 @@ class UserRepositoryTest {
         // Test with username
         Optional<UserModel> byUsername = userRepository.findByUsernameOrEmail("testuser");
         assertTrue(byUsername.isPresent());
+        assertEquals("Test", byUsername.get().getFirstName());  // Added
 
         // Test with email
         Optional<UserModel> byEmail = userRepository.findByUsernameOrEmail("test@example.com");
         assertTrue(byEmail.isPresent());
+        assertEquals("Test", byEmail.get().getFirstName());  // Added
 
         // Test case insensitivity
         Optional<UserModel> byUpperCase = userRepository.findByUsernameOrEmail("TESTUSER");
         assertTrue(byUpperCase.isPresent());
+        assertEquals("Test", byUpperCase.get().getFirstName());  // Added
     }
 
     @Test
@@ -150,6 +171,7 @@ class UserRepositoryTest {
         Optional<UserModel> foundUser = userRepository.findByUsernameOrEmailWithAuthorities("testuser");
         assertTrue(foundUser.isPresent());
         assertFalse(foundUser.get().getAuthorities().isEmpty());
+        assertEquals("Test", foundUser.get().getFirstName());  // Added
     }
 
     @Test
@@ -174,5 +196,32 @@ class UserRepositoryTest {
     void whenFindByEmptyUsername_thenReturnEmpty() {
         Optional<UserModel> foundUser = userRepository.findByUsername("");
         assertFalse(foundUser.isPresent());
+    }
+
+    @Test
+    void whenSaveUserWithoutFirstNameOrLastName_thenThrowException() {
+        // Missing firstName
+        UserModel noFirstName = UserModel.builder()
+                .username("nofirst")
+                .password("password")
+                .email("nofirst@example.com")
+                .lastName("User")  // Only lastName
+                .build();
+
+        assertThrows(DataIntegrityViolationException.class, () -> {
+            userRepository.saveAndFlush(noFirstName);
+        });
+
+        // Missing lastName
+        UserModel noLastName = UserModel.builder()
+                .username("nolast")
+                .password("password")
+                .email("nolast@example.com")
+                .firstName("No")  // Only firstName
+                .build();
+
+        assertThrows(DataIntegrityViolationException.class, () -> {
+            userRepository.saveAndFlush(noLastName);
+        });
     }
 }
