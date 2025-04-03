@@ -74,7 +74,6 @@ public class AuthorityInitializer {
      * </ol>
      *
      * @param authorityName the name of the authority to create (e.g., "ROLE_ADMIN")
-     * @return the existing or newly created authority
      */
     private void createAuthorityIfNotExists(String authorityName) {
         authorityRepository.findByAuthority(authorityName)
