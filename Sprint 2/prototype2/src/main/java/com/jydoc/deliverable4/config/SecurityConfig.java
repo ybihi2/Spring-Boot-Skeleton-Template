@@ -15,7 +15,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.header.writers.XXssProtectionHeaderWriter;
-import org.springframework.session.jdbc.config.annotation.web.http.EnableJdbcHttpSession;
 
 /**
  * Security configuration class that defines the application's security policies.
@@ -34,7 +33,7 @@ import org.springframework.session.jdbc.config.annotation.web.http.EnableJdbcHtt
  */
 @Configuration
 @EnableWebSecurity
-@EnableJdbcHttpSession
+
 public class SecurityConfig {
 
     /**
