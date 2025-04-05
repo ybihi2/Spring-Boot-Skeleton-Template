@@ -17,7 +17,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class LoginDTOTest {
+class LoginDtoValidationTest {
 
     private static Validator validator;
 
