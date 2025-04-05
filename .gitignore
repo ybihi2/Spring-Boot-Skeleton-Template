@@ -1,0 +1,5 @@
+/Sprint 2/prototype2/target
+*.log
+*.iml
+/Sprint 2/prototype2/docker-compose.yml
+*.gz

@@ -2,6 +2,8 @@ package com.jydoc.deliverable4.DTO;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -21,6 +23,7 @@ public record LoginDTO(
         String password
 ) implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**
