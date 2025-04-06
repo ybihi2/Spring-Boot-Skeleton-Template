@@ -2,45 +2,40 @@
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="en">
 <head>
-  <!--
-    =============================================
-    HEAD SECTION
-    - Sets character encoding and viewport
-    - Includes Bootstrap CSS
-    - Defines custom styles for cards and admin section
-    =============================================
-  -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>User Dashboard - JYDoc System</title>
+  <title>Medication Dashboard - HealthTrack System</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    /* Card hover effects */
     .card {
       transition: transform 0.3s;
+      border-radius: 10px;
     }
     .card:hover {
       transform: translateY(-5px);
       box-shadow: 0 10px 20px rgba(0,0,0,0.1);
     }
-    /* Visual indicator for admin section */
-    .admin-section {
+    .medication-alert {
       border-left: 4px solid #dc3545;
+    }
+    .health-metric {
+      border-left: 4px solid #28a745;
+    }
+    .bg-medication {
+      background-color: #6f42c1;
+    }
+    .bg-schedule {
+      background-color: #20c997;
+    }
+    .bg-health {
+      background-color: #17a2b8;
     }
   </style>
 </head>
 <body>
-<!--
-  =============================================
-  NAVIGATION BAR
-  - Dark themed navbar with system branding
-  - Displays current username (from Spring Security)
-  - Includes logout button
-  =============================================
--->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
   <div class="container">
-    <a class="navbar-brand" href="#">JYDoc System</a>
+    <a class="navbar-brand" href="#">HealthTrack</a>
     <div class="d-flex">
       <span class="navbar-text me-3 text-white">
         Welcome, <span sec:authentication="name"></span>
@@ -52,153 +47,139 @@
   </div>
 </nav>
 
-<!--
-  =============================================
-  MAIN CONTENT CONTAINER
-  - Contains sidebar and main dashboard area
-  - Responsive layout using Bootstrap grid
-  =============================================
--->
 <div class="container mt-4">
   <div class="row">
-    <!--
-      =========================================
-      SIDEBAR SECTION (3-column width)
-      - Contains user profile card
-      - Quick actions menu with conditional admin links
-      =========================================
-    -->
+    <!-- SIDEBAR SECTION -->
     <div class="col-md-3">
       <!-- User Profile Card -->
       <div class="card mb-4">
         <div class="card-header bg-primary text-white">
-          User Profile
+          Patient Profile
         </div>
         <div class="card-body">
-          <p><strong>Username:</strong> <span th:text="${username}"></span></p>
-          <p><strong>Roles:</strong>
-            <span th:each="auth : ${authorities}" th:text="${auth.authority} + ' '"></span>
+          <p><strong>Name:</strong> <span th:text="${username}"></span></p>
+          <p><strong>Health Conditions:</strong>
+            <span th:each="condition : ${healthConditions}" th:text="${condition} + ' '"></span>
           </p>
+          <a th:href="@{/user/profile}" class="btn btn-sm btn-outline-primary mt-2">Edit Profile</a>
         </div>
       </div>
 
-      <!-- Quick Actions Menu -->
+      <!-- Medication Quick Actions -->
       <div class="card">
         <div class="card-header bg-primary text-white">
-          Quick Actions
+          Medication Actions
         </div>
         <div class="list-group list-group-flush">
-          <a href="#" class="list-group-item list-group-item-action">Edit Profile</a>
-          <a href="#" class="list-group-item list-group-item-action">Change Password</a>
-          <a th:href="@{/user/reports}" class="list-group-item list-group-item-action">My Reports</a>
-          <!-- Admin-only link (conditionally displayed) -->
-          <a th:if="${isAdmin}" th:href="@{/admin/users}" class="list-group-item list-group-item-action">User Management</a>
+          <a th:href="@{/user/medications}" class="list-group-item list-group-item-action">My Medications</a>
+          <a th:href="@{/user/medications/add}" class="list-group-item list-group-item-action">Add Medication</a>
+          <a th:href="@{/user/schedule}" class="list-group-item list-group-item-action">Medication Schedule</a>
+          <a th:href="@{/user/refills}" class="list-group-item list-group-item-action">Refill Reminders</a>
         </div>
       </div>
     </div>
 
-    <!--
-      =========================================
-      MAIN DASHBOARD AREA (9-column width)
-      - Contains overview card
-      - Statistics cards section
-      - Conditional admin tools section
-      =========================================
-    -->
+    <!-- MAIN DASHBOARD AREA -->
     <div class="col-md-9">
-      <!-- Dashboard Overview Card -->
+      <!-- Dashboard Overview -->
       <div class="row">
         <div class="col-12">
           <div class="card mb-4">
             <div class="card-header bg-primary text-white">
-              Dashboard Overview
+              Medication Overview
             </div>
             <div class="card-body">
-              <h5 class="card-title">Welcome to your dashboard</h5>
-              <p class="card-text">Here you can manage your account and access all system features.</p>
+              <h5 class="card-title">Your Health Dashboard</h5>
+              <p class="card-text">Track and manage your medications in one place.</p>
             </div>
           </div>
         </div>
       </div>
 
-      <!--
-        STATISTICS CARDS SECTION
-        - Three equal-width cards showing key metrics
-        - Each has a different color scheme
-        - Placeholder data (would be dynamic in production)
-      -->
+      <!-- Medication Statistics Cards -->
       <div class="row">
         <div class="col-md-4 mb-4">
-          <div class="card text-white bg-success h-100">
+          <div class="card text-white bg-medication h-100">
             <div class="card-body">
-              <h5 class="card-title">Documents</h5>
-              <p class="card-text display-4">24</p>
-              <a href="#" class="text-white">View all</a>
+              <h5 class="card-title">Active Medications</h5>
+              <p class="card-text display-4" th:text="${activeMedicationsCount} ?: '0'"></p>
+              <a th:href="@{/user/medications}" class="text-white">View medications</a>
             </div>
           </div>
         </div>
         <div class="col-md-4 mb-4">
-          <div class="card text-white bg-info h-100">
+          <div class="card text-white bg-schedule h-100">
             <div class="card-body">
-              <h5 class="card-title">Tasks</h5>
-              <p class="card-text display-4">5</p>
-              <a href="#" class="text-white">View tasks</a>
+              <h5 class="card-title">Today's Doses</h5>
+              <p class="card-text display-4" th:text="${todaysDosesCount} ?: '0'"></p>
+              <a th:href="@{/user/schedule}" class="text-white">View schedule</a>
             </div>
           </div>
         </div>
         <div class="col-md-4 mb-4">
-          <div class="card text-white bg-warning h-100">
+          <div class="card text-white bg-health h-100">
             <div class="card-body">
-              <h5 class="card-title">Notifications</h5>
-              <p class="card-text display-4">3</p>
-              <a href="#" class="text-white">View alerts</a>
+              <h5 class="card-title">Health Metrics</h5>
+              <p class="card-text display-4" th:text="${healthMetricsCount} ?: '0'"></p>
+              <a th:href="@{/user/health}" class="text-white">Track health</a>
             </div>
           </div>
         </div>
       </div>
 
-      <!--
-        ADMIN TOOLS SECTION
-        - Only visible to users with admin role
-        - Contains three management cards
-        - Red accent border for visual distinction
-      -->
-      <div th:if="${isAdmin}" class="row mt-4">
+      <!-- Medication Alerts Section -->
+      <div class="row mt-4">
         <div class="col-12">
-          <div class="card admin-section">
+          <div class="card medication-alert">
             <div class="card-header bg-danger text-white">
-              Admin Tools
+              Medication Alerts
             </div>
             <div class="card-body">
-              <div class="row">
-                <div class="col-md-4 mb-3">
-                  <div class="card h-100">
-                    <div class="card-body">
-                      <h5 class="card-title">User Management</h5>
-                      <p class="card-text">Manage all system users and permissions</p>
-                      <a th:href="@{/admin/users}" class="btn btn-outline-danger">Go to Users</a>
-                    </div>
-                  </div>
-                </div>
-                <div class="col-md-4 mb-3">
-                  <div class="card h-100">
-                    <div class="card-body">
-                      <h5 class="card-title">System Reports</h5>
-                      <p class="card-text">View system analytics and reports</p>
-                      <a th:href="@{/admin/reports}" class="btn btn-outline-danger">View Reports</a>
-                    </div>
-                  </div>
-                </div>
-                <div class="col-md-4 mb-3">
-                  <div class="card h-100">
-                    <div class="card-body">
-                      <h5 class="card-title">Audit Logs</h5>
-                      <p class="card-text">Review system activity logs</p>
-                      <a th:href="@{/admin/logs}" class="btn btn-outline-danger">View Logs</a>
-                    </div>
-                  </div>
-                </div>
+              <div th:if="${#lists.isEmpty(alerts)}" class="alert alert-info">
+                No current medication alerts
               </div>
+              <div th:each="alert : ${alerts}" class="alert alert-warning">
+                <strong th:text="${alert.type}"></strong>:
+                <span th:text="${alert.message}"></span>
+                <span th:if="${alert.medicationName}" class="font-italic">
+                  (Medication: <span th:text="${alert.medicationName}"></span>)
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upcoming Medications Section -->
+      <div class="row mt-4">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header bg-success text-white">
+              Upcoming Medications
+            </div>
+            <div class="card-body">
+              <table class="table table-hover">
+                <thead>
+                <tr>
+                  <th>Medication</th>
+                  <th>Dosage</th>
+                  <th>Next Dose</th>
+                  <th>Status</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="med : ${upcomingMedications}">
+                  <td th:text="${med.name}"></td>
+                  <td th:text="${med.dosage}"></td>
+                  <td th:text="${med.nextDoseTime}"></td>
+                  <td>
+                    <span th:if="${med.isTaken}" class="badge bg-success">Taken</span>
+                    <span th:unless="${med.isTaken}" class="badge bg-warning">Pending</span>
+                  </td>
+                </tr>
+                </tbody>
+              </table>
+              <a th:href="@{/user/schedule}" class="btn btn-outline-success">View Full Schedule</a>
             </div>
           </div>
         </div>
@@ -207,12 +188,6 @@
   </div>
 </div>
 
-<!--
-  =============================================
-  FOOTER SCRIPTS
-  - Includes Bootstrap JS bundle
-  =============================================
--->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

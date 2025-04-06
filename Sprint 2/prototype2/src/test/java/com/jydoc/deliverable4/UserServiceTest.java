@@ -141,8 +141,16 @@ class UserServiceTest {
 
     @Test
     void deleteUser_DeletesById() {
+        // Mock existsById() to return true (if your service checks existence)
+        when(userRepository.existsById(1L)).thenReturn(true);
+
+        // Mock deleteById to do nothing
+        doNothing().when(userRepository).deleteById(1L);
+
+        // Execute
         userService.deleteUser(1L);
 
+        // Verify deletion was called
         verify(userRepository).deleteById(1L);
     }
 
