@@ -1,28 +1,27 @@
 package com.jydoc.deliverable4;
 
-import com.jydoc.deliverable4.DTO.LoginDTO;
-import com.jydoc.deliverable4.DTO.UserDTO;
-import com.jydoc.deliverable4.Service.UserService;
-import com.jydoc.deliverable4.Service.UserValidationHelper;
+import com.jydoc.deliverable4.dto.LoginDTO;
+import com.jydoc.deliverable4.dto.UserDTO;
 import com.jydoc.deliverable4.model.AuthorityModel;
 import com.jydoc.deliverable4.model.UserModel;
 import com.jydoc.deliverable4.repositories.AuthorityRepository;
 import com.jydoc.deliverable4.repositories.UserRepository;
+import com.jydoc.deliverable4.services.UserService;
+import com.jydoc.deliverable4.services.UserValidationHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -38,32 +37,18 @@ class UserServiceTest {
     private PasswordEncoder passwordEncoder;
 
     @Mock
-    private AuthenticationManager authenticationManager;
-
-    @Mock
     private UserValidationHelper validationHelper;
 
     @InjectMocks
     private UserService userService;
 
-    private UserDTO testUserDto;
-    private LoginDTO testLoginDto;
     private UserModel testUser;
     private AuthorityModel testAuthority;
 
     @BeforeEach
     void setUp() {
-        // Initialize test data
-        testUserDto = new UserDTO();
-        testUserDto.setUsername("testuser");
-        testUserDto.setEmail("test@example.com");
-        testUserDto.setPassword("Password123!");
-        testUserDto.setFirstName("Test");  // Added
-        testUserDto.setLastName("User");   // Added
-
-        testLoginDto = new LoginDTO("testuser", "Password123!");
-
         testUser = UserModel.builder()
+                .id(1L)
                 .username("testuser")
                 .email("test@example.com")
                 .firstName("Test")
@@ -80,85 +65,104 @@ class UserServiceTest {
                 .authority("ROLE_USER")
                 .users(new HashSet<>())
                 .build();
-        testUser.addAuthority(testAuthority);  // Ensure testUser has the authority
+        testUser.addAuthority(testAuthority);
     }
 
-    // ---------------------- Registration Tests ----------------------
+    /* ======================== User Management Tests ======================== */
 
     @Test
-    void registerNewUser_ValidUser_Success() {
-        // Arrange
-        when(userRepository.existsByUsername("testuser")).thenReturn(false);
-        when(userRepository.existsByEmail("test@example.com")).thenReturn(false);
-        when(passwordEncoder.encode("Password123!")).thenReturn("encodedPassword");
-        when(authorityRepository.findByAuthority("ROLE_USER")).thenReturn(Optional.of(testAuthority));
-        when(userRepository.save(any(UserModel.class))).thenReturn(testUser);
+    void findActiveUser_ValidUsername_ReturnsUser() {
+        when(userRepository.findByUsernameOrEmail("testuser"))
+                .thenReturn(Optional.of(testUser));
 
-        // Act
-        userService.registerNewUser(testUserDto);
+        Optional<UserModel> result = userService.findActiveUser("testuser");
 
-        // Assert
-        verify(validationHelper).validateUserRegistration(testUserDto);
-        verify(userRepository).existsByUsername("testuser");
-        verify(userRepository).existsByEmail("test@example.com");
-        verify(passwordEncoder).encode("Password123!");
-        verify(authorityRepository).findByAuthority("ROLE_USER");
-        verify(userRepository).save(any(UserModel.class));
+        assertTrue(result.isPresent());
+        assertEquals("testuser", result.get().getUsername());
+        verify(userRepository).findByUsernameOrEmail("testuser");
     }
 
     @Test
-    void registerNewUser_NullUserDto_ThrowsException() {
-        // Act & Assert
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> userService.registerNewUser(null));
-        assertEquals("UserDTO cannot be null", exception.getMessage());
+    void findActiveUser_DisabledUser_ReturnsEmpty() {
+        testUser.setEnabled(false);
+        when(userRepository.findByUsernameOrEmail("testuser"))
+                .thenReturn(Optional.of(testUser));
+
+        Optional<UserModel> result = userService.findActiveUser("testuser");
+
+        assertFalse(result.isPresent());
     }
 
     @Test
-    void registerNewUser_ExistingUsername_ThrowsException() {
-        // Arrange
-        when(userRepository.existsByUsername("testuser")).thenReturn(true);
+    void getUserCount_ReturnsCount() {
+        when(userRepository.count()).thenReturn(5L);
 
-        // Act & Assert
-        UserService.UsernameExistsException exception = assertThrows(
-                UserService.UsernameExistsException.class,
-                () -> userService.registerNewUser(testUserDto)
-        );
-        assertEquals("Username 'testuser' already exists", exception.getMessage());
+        long count = userService.getUserCount();
 
-        // Verify no user was saved
-        verify(userRepository, never()).save(any(UserModel.class));
+        assertEquals(5L, count);
+        verify(userRepository).count();
     }
 
     @Test
-    void registerNewUser_ExistingEmail_ThrowsException() {
-        // Arrange
-        when(userRepository.existsByUsername("testuser")).thenReturn(false);
-        when(userRepository.existsByEmail("test@example.com")).thenReturn(true);
+    void existsById_UserExists_ReturnsTrue() {
+        when(userRepository.existsById(1L)).thenReturn(true);
 
-        // Act & Assert
-        UserService.EmailExistsException exception = assertThrows(UserService.EmailExistsException.class,
-                () -> userService.registerNewUser(testUserDto));
-        assertEquals("Email 'test@example.com' is already registered", exception.getMessage());
+        boolean exists = userService.existsById(1L);
 
-        // Verify no attempt to save user
-        verify(userRepository, never()).save(any(UserModel.class));
+        assertTrue(exists);
     }
 
     @Test
-    void registerNewUser_EmptyPassword_ThrowsException() {
-        // Arrange
-        testUserDto.setPassword("");
+    void getAllUsers_ReturnsUserList() {
+        when(userRepository.findAll()).thenReturn(List.of(testUser));
 
-        // Act & Assert
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> userService.registerNewUser(testUserDto));
-        assertEquals("Password cannot be empty", exception.getMessage());
+        List<UserModel> users = userService.getAllUsers();
 
-        // Verify no repository interactions occurred
-        verifyNoInteractions(userRepository);
-        verifyNoInteractions(authorityRepository);
+        assertEquals(1, users.size());
+        assertEquals("testuser", users.get(0).getUsername());
     }
 
-    // ... rest of the test methods remain the same ...
+    @Test
+    void getUserById_ValidId_ReturnsUser() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+
+        Optional<UserModel> result = userService.getUserById(1L);
+
+        assertTrue(result.isPresent());
+        assertEquals("testuser", result.get().getUsername());
+    }
+
+    @Test
+    void updateUser_SavesUser() {
+        userService.updateUser(testUser);
+
+        verify(userRepository).save(testUser);
+    }
+
+    @Test
+    void deleteUser_DeletesById() {
+        userService.deleteUser(1L);
+
+        verify(userRepository).deleteById(1L);
+    }
+
+    @Test
+    void findByUsername_ValidUsername_ReturnsUser() {
+        when(userRepository.findByUsername("testuser"))
+                .thenReturn(Optional.of(testUser));
+
+        UserModel result = userService.findByUsername("testuser");
+
+        assertEquals("testuser", result.getUsername());
+    }
+
+    @Test
+    void findByUsername_InvalidUsername_ThrowsException() {
+        when(userRepository.findByUsername("unknown"))
+                .thenReturn(Optional.empty());
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            userService.findByUsername("unknown");
+        });
+    }
 }

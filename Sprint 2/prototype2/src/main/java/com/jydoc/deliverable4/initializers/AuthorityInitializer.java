@@ -1,4 +1,4 @@
-package com.jydoc.deliverable4.Initializers;
+package com.jydoc.deliverable4.initializers;
 
 import com.jydoc.deliverable4.model.AuthorityModel;
 import com.jydoc.deliverable4.repositories.AuthorityRepository;
