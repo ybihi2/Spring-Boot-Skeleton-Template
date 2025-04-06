@@ -16,35 +16,15 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.header.writers.XXssProtectionHeaderWriter;
 
-/**
- * Security configuration class that defines the application's security policies.
- * This includes authentication, authorization, session management, CSRF protection,
- * and security headers configuration.
- *
- * <p>The configuration enables:
- * <ul>
- *   <li>JDBC-based HTTP session management</li>
- *   <li>Form-based authentication with custom success handler</li>
- *   <li>Role-based authorization</li>
- *   <li>Secure session management</li>
- *   <li>CSRF protection with cookie storage</li>
- *   <li>Security headers including XSS protection and CSP</li>
- * </ul>
- */
 @Configuration
 @EnableWebSecurity
-
 public class SecurityConfig {
 
-    /**
-     * Public endpoints that don't require authentication.
-     * These include static resources, public APIs, and authentication-related pages.
-     */
     private static final String[] PUBLIC_ENDPOINTS = {
             "/",
             "/home",
-            "/login",
-            "/register",
+            "/auth/login",
+            "/auth/register",
             "/css/**",
             "/js/**",
             "/images/**",
@@ -55,22 +35,10 @@ public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
 
-    /**
-     * Constructs a new SecurityConfig with the required UserDetailsService.
-     *
-     * @param userDetailsService the custom user details service for authentication
-     */
     public SecurityConfig(CustomUserDetailsService userDetailsService) {
         this.userDetailsService = userDetailsService;
     }
 
-    /**
-     * Configures the security filter chain that defines all security policies.
-     *
-     * @param http the HttpSecurity to configure
-     * @return the configured SecurityFilterChain
-     * @throws Exception if an error occurs during configuration
-     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         configureAuthorization(http);
@@ -84,12 +52,6 @@ public class SecurityConfig {
         return http.build();
     }
 
-    /**
-     * Configures authorization rules for endpoints.
-     *
-     * @param http the HttpSecurity to configure
-     * @throws Exception if an error occurs during configuration
-     */
     private void configureAuthorization(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(auth -> auth
                 .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
@@ -98,34 +60,23 @@ public class SecurityConfig {
         );
     }
 
-    /**
-     * Configures form-based login.
-     *
-     * @param http the HttpSecurity to configure
-     * @throws Exception if an error occurs during configuration
-     */
     private void configureFormLogin(HttpSecurity http) throws Exception {
         http.formLogin(form -> form
-                .loginPage("/login")
-                .loginProcessingUrl("/perform_login")
+                .loginPage("/auth/login")  // Changed to match controller mapping
+                .loginProcessingUrl("/auth/login")  // Changed to match controller
                 .successHandler(authenticationSuccessHandler())
-                .failureUrl("/login?error=true")
+                .failureUrl("/auth/login?error=true")
+                .defaultSuccessUrl("/dashboard")
                 .usernameParameter("username")
                 .passwordParameter("password")
                 .permitAll()
         );
     }
 
-    /**
-     * Configures logout behavior.
-     *
-     * @param http the HttpSecurity to configure
-     * @throws Exception if an error occurs during configuration
-     */
     private void configureLogout(HttpSecurity http) throws Exception {
         http.logout(logout -> logout
-                .logoutUrl("/perform_logout")
-                .logoutSuccessUrl("/login?logout")
+                .logoutUrl("/auth/logout")  // Changed to match controller
+                .logoutSuccessUrl("/auth/login?logout")  // Changed to match controller
                 .deleteCookies("JSESSIONID", "XSRF-TOKEN")
                 .invalidateHttpSession(true)
                 .clearAuthentication(true)
@@ -133,40 +84,22 @@ public class SecurityConfig {
         );
     }
 
-    /**
-     * Configures session management policies.
-     *
-     * @param http the HttpSecurity to configure
-     * @throws Exception if an error occurs during configuration
-     */
     private void configureSessionManagement(HttpSecurity http) throws Exception {
         http.sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                .invalidSessionUrl("/login?invalid-session")
+                .invalidSessionUrl("/auth/login?invalid-session")  // Changed to match controller
                 .maximumSessions(1)
                 .maxSessionsPreventsLogin(false)
-                .expiredUrl("/login?session-expired")
+                .expiredUrl("/auth/login?session-expired")  // Changed to match controller
         );
     }
 
-    /**
-     * Configures exception handling for security-related exceptions.
-     *
-     * @param http the HttpSecurity to configure
-     * @throws Exception if an error occurs during configuration
-     */
     private void configureExceptionHandling(HttpSecurity http) throws Exception {
         http.exceptionHandling(exceptions -> exceptions
                 .accessDeniedPage("/access-denied")
         );
     }
 
-    /**
-     * Configures CSRF protection with exceptions for API endpoints.
-     *
-     * @param http the HttpSecurity to configure
-     * @throws Exception if an error occurs during configuration
-     */
     private void configureCsrfProtection(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf
                 .ignoringRequestMatchers("/api/**")
@@ -174,12 +107,6 @@ public class SecurityConfig {
         );
     }
 
-    /**
-     * Configures security headers including XSS protection and Content Security Policy.
-     *
-     * @param http the HttpSecurity to configure
-     * @throws Exception if an error occurs during configuration
-     */
     private void configureSecurityHeaders(HttpSecurity http) throws Exception {
         http.headers(headers -> headers
                 .xssProtection(xss -> xss
@@ -193,34 +120,17 @@ public class SecurityConfig {
         );
     }
 
-    /**
-     * Provides a custom authentication success handler bean.
-     *
-     * @return the configured AuthenticationSuccessHandler
-     */
     @Bean
     public AuthenticationSuccessHandler authenticationSuccessHandler() {
         return new CustomAuthenticationSuccessHandler();
     }
 
-    /**
-     * Provides the AuthenticationManager bean.
-     *
-     * @param authenticationConfiguration the authentication configuration
-     * @return the configured AuthenticationManager
-     * @throws Exception if an error occurs during configuration
-     */
     @Bean
     public AuthenticationManager authenticationManager(
             AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
 
-    /**
-     * Provides the password encoder bean using BCrypt hashing.
-     *
-     * @return the configured PasswordEncoder
-     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

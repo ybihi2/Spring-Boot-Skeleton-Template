@@ -1,6 +1,6 @@
 package com.jydoc.deliverable4;
 
-import com.jydoc.deliverable4.Initializers.AuthorityInitializer;
+import com.jydoc.deliverable4.initializers.AuthorityInitializer;
 import com.jydoc.deliverable4.model.AuthorityModel;
 import com.jydoc.deliverable4.repositories.AuthorityRepository;
 import org.junit.jupiter.api.BeforeEach;

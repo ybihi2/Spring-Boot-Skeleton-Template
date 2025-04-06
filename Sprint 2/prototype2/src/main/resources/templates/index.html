@@ -30,7 +30,7 @@
 
                 <!-- Register button -->
                 <a sec:authorize="isAnonymous()"
-                   th:href="@{/register}"
+                   th:href="@{/auth/register}"
                    aria-label="Register new account"
                    class="btn btn-success btn-lg px-4">
                     <i aria-hidden="true" class="bi bi-person-plus me-2"></i> Register
@@ -38,7 +38,7 @@
 
                 <!-- Login button -->
                 <a sec:authorize="isAnonymous()"
-                   th:href="@{/login}"
+                   th:href="@{/auth/login}"
                    aria-label="Login to your account"
                    class="btn btn-outline-secondary btn-lg px-4">
                     <i aria-hidden="true" class="bi bi-box-arrow-in-right me-2"></i> Login
@@ -46,7 +46,7 @@
 
                 <!-- Logout form -->
                 <form sec:authorize="isAuthenticated()"
-                      th:action="@{/logout}"
+                      th:action="@{/auth/logout}"
                       method="post"
                       class="d-inline">
                     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
@@ -88,7 +88,7 @@
                 <a aria-label="Create your account now"
                    class="btn btn-outline-primary"
                    sec:authorize="isAnonymous()"
-                   th:href="@{/register}">
+                   th:href="@{/auth/register}">
                     Create Account
                 </a>
                 <a aria-label="Access your dashboard"
