@@ -1,4 +1,4 @@
-package com.jydoc.deliverable4;
+package com.jydoc.deliverable4.securitytests;
 
 import com.jydoc.deliverable4.security.auth.CustomUserDetails;
 import org.junit.jupiter.api.Test;

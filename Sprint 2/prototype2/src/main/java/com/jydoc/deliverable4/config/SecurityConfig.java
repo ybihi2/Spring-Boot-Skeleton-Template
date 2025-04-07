@@ -99,7 +99,7 @@ public class SecurityConfig {
                 .loginProcessingUrl("/auth/login")  // URL to submit username/password
                 .successHandler(authenticationSuccessHandler())  // Custom success handler
                 .failureUrl("/auth/login?error=true")  // Redirect on failure
-                .defaultSuccessUrl("/dashboard")  // Default success URL
+                .defaultSuccessUrl("/user/dashboard")  // Default success URL
                 .usernameParameter("username")  // Username parameter name
                 .passwordParameter("password")  // Password parameter name
                 .permitAll()  // Allow access to login for everyone

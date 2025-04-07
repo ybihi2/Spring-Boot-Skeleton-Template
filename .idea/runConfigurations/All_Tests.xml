@@ -3,7 +3,7 @@
     <module name="deliverable4" />
     <extension name="coverage">
       <pattern>
-        <option name="PATTERN" value="com.jydoc.deliverable4.*" />
+        <option name="PATTERN" value="com.jydoc.deliverable4.modeltests.*" />
         <option name="ENABLED" value="true" />
       </pattern>
     </extension>

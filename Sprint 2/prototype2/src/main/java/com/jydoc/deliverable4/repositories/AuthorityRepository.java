@@ -1,6 +1,6 @@
 package com.jydoc.deliverable4.repositories;
 
-import com.jydoc.deliverable4.model.AuthorityModel;
+import com.jydoc.deliverable4.model.auth.AuthorityModel;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
