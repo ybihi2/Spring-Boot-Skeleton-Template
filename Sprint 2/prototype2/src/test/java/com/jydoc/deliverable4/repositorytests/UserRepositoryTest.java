@@ -1,6 +1,6 @@
-package com.jydoc.deliverable4;
+package com.jydoc.deliverable4.repositorytests;
 
-import com.jydoc.deliverable4.model.AuthorityModel;
+import com.jydoc.deliverable4.model.auth.AuthorityModel;
 import com.jydoc.deliverable4.model.UserModel;
 import com.jydoc.deliverable4.repositories.UserRepository;
 import org.junit.jupiter.api.BeforeEach;

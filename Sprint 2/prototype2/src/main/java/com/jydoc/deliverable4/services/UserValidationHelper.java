@@ -1,6 +1,6 @@
 package com.jydoc.deliverable4.services;
 
-import com.jydoc.deliverable4.dto.UserDTO;
+import com.jydoc.deliverable4.dtos.UserDTO;
 import com.jydoc.deliverable4.security.Exceptions.EmailExistsException;
 import com.jydoc.deliverable4.security.Exceptions.UsernameExistsException;
 import com.jydoc.deliverable4.repositories.UserRepository;

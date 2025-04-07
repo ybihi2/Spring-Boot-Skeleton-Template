@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Medication - HealthTrack System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .form-container {
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+        .time-tag {
+            display: inline-block;
+            margin: 0.3rem;
+            padding: 0.3rem 0.6rem;
+            background-color: #e9ecef;
+            border-radius: 20px;
+        }
+        .time-tag-remove {
+            cursor: pointer;
+            margin-left: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand" href="#" th:href="@{/user/dashboard}">
+            <i class="fas fa-heartbeat me-2"></i>HealthTrack
+        </a>
+        <div class="d-flex">
+            <span class="navbar-text me-3 text-white">
+                <i class="fas fa-user me-1"></i>
+                <span sec:authentication="name"></span>
+            </span>
+            <form th:action="@{/auth/logout}" method="post">
+                <button class="btn btn-outline-light" type="submit">
+                    <i class="fas fa-sign-out-alt me-1"></i> Logout
+                </button>
+            </form>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="form-container bg-white">
+        <h2 class="mb-4 text-center">
+            <i class="fas fa-pills me-2"></i>Add New Medication
+        </h2>
+
+        <!-- Success/Error Messages -->
+        <div th:if="${param.success}" class="alert alert-success">
+            Medication added successfully!
+        </div>
+        <div th:if="${param.error}" class="alert alert-danger">
+            <span th:text="${error}">Error message</span>
+        </div>
+
+        <form th:action="@{/user/medication}" th:object="${medicationDTO}" method="post">
+            <!-- Hidden user ID field -->
+            <input type="hidden" name="userId" th:value="${#authentication.principal.userId}">
+
+            <!-- Medication Name -->
+            <div class="mb-3">
+                <label for="medicationName" class="form-label">
+                    <i class="fas fa-medkit me-1"></i> Medication Name
+                </label>
+                <input type="text" class="form-control" id="medicationName"
+                       th:field="*{medicationName}" required>
+                <div th:if="${#fields.hasErrors('medicationName')}" class="invalid-feedback d-block">
+                    <span th:errors="*{medicationName}">Validation error</span>
+                </div>
+            </div>
+
+            <!-- Urgency Level -->
+            <div class="mb-3">
+                <label class="form-label">
+                    <i class="fas fa-exclamation-triangle me-1"></i> Urgency Level
+                </label>
+                <div th:if="${#fields.hasErrors('urgency')}" class="invalid-feedback d-block">
+                    <span th:errors="*{urgency}">Validation error</span>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" id="urgent"
+                           th:field="*{urgency}" th:value="URGENT" required>
+                    <label class="form-check-label text-danger" for="urgent">
+                        <i class="fas fa-bell me-1"></i> Urgent
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" id="nonUrgent"
+                           th:field="*{urgency}" th:value="NONURGENT">
+                    <label class="form-check-label text-success" for="nonUrgent">
+                        <i class="fas fa-check-circle me-1"></i> Non-Urgent
+                    </label>
+                </div>
+            </div>
+
+            <!-- Intake Times -->
+            <div class="mb-3">
+                <label class="form-label">
+                    <i class="fas fa-clock me-1"></i> Intake Times
+                </label>
+                <div th:if="${#fields.hasErrors('intakeTimes')}" class="invalid-feedback d-block">
+                    <span th:errors="*{intakeTimes}">Validation error</span>
+                </div>
+                <div class="input-group mb-2">
+                    <input type="time" class="form-control" id="timeInput">
+                    <button class="btn btn-primary" type="button" id="addTimeBtn">
+                        <i class="fas fa-plus me-1"></i> Add Time
+                    </button>
+                </div>
+                <div id="timeTagsContainer" class="mb-2">
+                    <!-- Time tags will be added here dynamically -->
+                </div>
+                <input type="hidden" id="intakeTimes" name="intakeTimes" th:field="*{intakeTimes}">
+                <small class="text-muted">Add all times when you need to take this medication</small>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="d-flex justify-content-between mt-4">
+                <a th:href="@{/user/medication}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i> Back to Medications
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-1"></i> Save Medication
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:inline="javascript">
+    document.addEventListener('DOMContentLoaded', function() {
+        const timeInput = document.getElementById('timeInput');
+        const addTimeBtn = document.getElementById('addTimeBtn');
+        const timeTagsContainer = document.getElementById('timeTagsContainer');
+        const intakeTimesInput = document.getElementById('intakeTimes');
+        let intakeTimes = [];
+
+        // Load existing times from the model, with a fallback to empty array
+        const initialTimes = /*[[${medicationDTO.intakeTimes}]]*/ [];
+        intakeTimes = Array.isArray(initialTimes) ? [...initialTimes] : [];
+        intakeTimes.forEach(time => addTimeTag(time));
+
+        // Add time to the list
+        addTimeBtn.addEventListener('click', function() {
+            if (timeInput.value) {
+                addTimeTag(timeInput.value);
+                timeInput.value = '';
+                timeInput.focus();
+            }
+        });
+
+        // Handle Enter key in time input
+        timeInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (timeInput.value) {
+                    addTimeTag(timeInput.value);
+                    timeInput.value = '';
+                }
+            }
+        });
+
+        function addTimeTag(time) {
+            if (!intakeTimes.includes(time)) {
+                intakeTimes.push(time);
+                updateTimeTagsDisplay();
+                updateHiddenInput();
+            }
+        }
+
+        function removeTimeTag(time) {
+            intakeTimes = intakeTimes.filter(t => t !== time);
+            updateTimeTagsDisplay();
+            updateHiddenInput();
+        }
+
+        function updateTimeTagsDisplay() {
+            timeTagsContainer.innerHTML = '';
+            intakeTimes.forEach(time => {
+                const tag = document.createElement('span');
+                tag.className = 'time-tag';
+                tag.innerHTML = `
+                    ${formatTime(time)}
+                    <span class="time-tag-remove" onclick="removeTimeTag('${time}')">
+                        <i class="fas fa-times"></i>
+                    </span>
+                `;
+                timeTagsContainer.appendChild(tag);
+            });
+        }
+
+        function updateHiddenInput() {
+            intakeTimesInput.value = intakeTimes.join(',');
+        }
+
+        function formatTime(timeString) {
+            const [hours, minutes] = timeString.split(':');
+            let hour = parseInt(hours);
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            hour = hour % 12 || 12; // Simplified: 0 becomes 12
+            const paddedMinutes = minutes.padStart(2, '0');
+            return `${hour}:${paddedMinutes} ${ampm}`;
+        }
+
+        // Make removeTimeTag available globally
+        window.removeTimeTag = removeTimeTag;
+    });
+</script>
+</body>
+</html>

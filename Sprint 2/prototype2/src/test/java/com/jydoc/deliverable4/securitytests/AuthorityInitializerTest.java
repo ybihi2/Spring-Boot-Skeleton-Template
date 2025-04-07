@@ -1,7 +1,7 @@
-package com.jydoc.deliverable4;
+package com.jydoc.deliverable4.securitytests;
 
 import com.jydoc.deliverable4.initializers.AuthorityInitializer;
-import com.jydoc.deliverable4.model.AuthorityModel;
+import com.jydoc.deliverable4.model.auth.AuthorityModel;
 import com.jydoc.deliverable4.repositories.AuthorityRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

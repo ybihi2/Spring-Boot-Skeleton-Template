@@ -1,8 +1,6 @@
-package com.jydoc.deliverable4;
+package com.jydoc.deliverable4.servicetests;
 
-import com.jydoc.deliverable4.dto.LoginDTO;
-import com.jydoc.deliverable4.dto.UserDTO;
-import com.jydoc.deliverable4.model.AuthorityModel;
+import com.jydoc.deliverable4.model.auth.AuthorityModel;
 import com.jydoc.deliverable4.model.UserModel;
 import com.jydoc.deliverable4.repositories.AuthorityRepository;
 import com.jydoc.deliverable4.repositories.UserRepository;

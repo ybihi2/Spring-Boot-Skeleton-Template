@@ -1,6 +1,6 @@
-package com.jydoc.deliverable4;
+package com.jydoc.deliverable4.securitytests;
 
-import com.jydoc.deliverable4.model.AuthorityModel;
+import com.jydoc.deliverable4.model.auth.AuthorityModel;
 import com.jydoc.deliverable4.model.UserModel;
 import com.jydoc.deliverable4.repositories.UserRepository;
 import com.jydoc.deliverable4.security.auth.CustomUserDetailsService;

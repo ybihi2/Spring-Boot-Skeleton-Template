@@ -1,7 +1,7 @@
 package com.jydoc.deliverable4.controllers;
 
-import com.jydoc.deliverable4.dto.UserDTO;
-import com.jydoc.deliverable4.dto.LoginDTO;
+import com.jydoc.deliverable4.dtos.UserDTO;
+import com.jydoc.deliverable4.dtos.LoginDTO;
 import com.jydoc.deliverable4.model.UserModel;
 import com.jydoc.deliverable4.services.AuthService;
 import com.jydoc.deliverable4.services.UserService;

@@ -1,6 +1,6 @@
-package com.jydoc.deliverable4;
+package com.jydoc.deliverable4.dtotests;
 
-import com.jydoc.deliverable4.dto.UserDTO;
+import com.jydoc.deliverable4.dtos.UserDTO;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;

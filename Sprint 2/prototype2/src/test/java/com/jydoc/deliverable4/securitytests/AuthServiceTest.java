@@ -1,8 +1,8 @@
-package com.jydoc.deliverable4;
+package com.jydoc.deliverable4.securitytests;
 
-import com.jydoc.deliverable4.dto.LoginDTO;
-import com.jydoc.deliverable4.dto.UserDTO;
-import com.jydoc.deliverable4.model.AuthorityModel;
+import com.jydoc.deliverable4.dtos.LoginDTO;
+import com.jydoc.deliverable4.dtos.UserDTO;
+import com.jydoc.deliverable4.model.auth.AuthorityModel;
 import com.jydoc.deliverable4.model.UserModel;
 import com.jydoc.deliverable4.repositories.AuthorityRepository;
 import com.jydoc.deliverable4.repositories.UserRepository;
@@ -26,7 +26,6 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Medication Dashboard - HealthTrack System</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .card {
+      transition: transform 0.3s;
+      border-radius: 10px;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    .medication-alert {
+      border-left: 4px solid #dc3545;
+    }
+    .health-metric {
+      border-left: 4px solid #28a745;
+    }
+    .bg-medication {
+      background-color: #6f42c1;
+    }
+    .bg-schedule {
+      background-color: #20c997;
+    }
+    .bg-health {
+      background-color: #17a2b8;
+    }
+    .modal-icon {
+      font-size: 4rem;
+      color: #6f42c1;
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Medication Reminder Modal -->
+<div class="modal fade" id="noMedicationsModal" tabindex="-1" aria-labelledby="noMedicationsModalLabel" aria-hidden="true"
+     th:if="${not dashboard.hasMedications}">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="noMedicationsModalLabel">
+          <i class="fas fa-exclamation-circle me-2"></i>Medication Setup Required
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center">
+        <div class="modal-icon">
+          <i class="fas fa-pills"></i>
+        </div>
+        <h4 class="mb-3">Let's Get Started!</h4>
+        <p>You haven't added any medications yet. Setting up your medication profile will enable:</p>
+        <ul class="text-start mb-4">
+          <li>Personalized medication reminders</li>
+          <li>Drug interaction warnings</li>
+          <li>Refill notifications</li>
+          <li>Health progress tracking</li>
+        </ul>
+      </div>
+      <div class="modal-footer justify-content-center">
+        <button type="button" class="btn btn-outline-secondary me-3" data-bs-dismiss="modal">
+          <i class="fas fa-clock me-1"></i> Remind Me Later
+        </button>
+        <a th:href="@{/user/medication/add}" class="btn btn-primary">
+          <i class="fas fa-plus-circle me-1"></i> Add Medications
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+  <div class="container">
+    <a class="navbar-brand" href="#">
+      <i class="fas fa-heartbeat me-2"></i>HealthTrack
+    </a>
+    <div class="d-flex">
+      <span class="navbar-text me-3 text-white">
+        <i class="fas fa-user me-1"></i>
+        <span sec:authentication="name"></span>
+      </span>
+      <form th:action="@{/auth/logout}" method="post">
+        <button class="btn btn-outline-light" type="submit">
+          <i class="fas fa-sign-out-alt me-1"></i> Logout
+        </button>
+      </form>
+    </div>
+  </div>
+</nav>
+
+<div class="container mt-4">
+  <div class="row">
+    <!-- SIDEBAR SECTION -->
+    <div class="col-md-3">
+      <!-- User Profile Card -->
+      <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+          <i class="fas fa-user-circle me-2"></i>Patient Profile
+        </div>
+        <div class="card-body">
+          <p><strong><i class="fas fa-user me-1"></i> Name:</strong> <span th:text="${dashboard.username}"></span></p>
+          <p><strong><i class="fas fa-heartbeat me-1"></i> Health Conditions:</strong>
+            <span th:each="condition : ${dashboard.healthConditions}" th:text="${condition} + ' '"></span>
+          </p>
+          <a th:href="@{/user/profile}" class="btn btn-sm btn-outline-primary mt-2">
+            <i class="fas fa-edit me-1"></i> Edit Profile
+          </a>
+        </div>
+      </div>
+
+      <!-- Medication Quick Actions -->
+      <div class="card">
+        <div class="card-header bg-primary text-white">
+          <i class="fas fa-pills me-2"></i>Medication Actions
+        </div>
+        <div class="list-group list-group-flush">
+          <a th:href="@{/user/medication}" class="list-group-item list-group-item-action">
+            <i class="fas fa-list-ul me-2"></i>My Medications
+          </a>
+          <a th:href="@{/user/medication/add}" class="list-group-item list-group-item-action">
+            <i class="fas fa-plus-circle me-2"></i>Add Medication
+          </a>
+          <a th:href="@{/user/schedule}" class="list-group-item list-group-item-action">
+            <i class="fas fa-calendar-alt me-2"></i>Medication Schedule
+          </a>
+          <a th:href="@{/user/refills}" class="list-group-item list-group-item-action">
+            <i class="fas fa-bell me-2"></i>Refill Reminders
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN DASHBOARD AREA -->
+    <div class="col-md-9">
+      <!-- Dashboard Overview -->
+      <div class="row">
+        <div class="col-12">
+          <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+              <i class="fas fa-chart-line me-2"></i>Medication Overview
+            </div>
+            <div class="card-body">
+              <h5 class="card-title">Welcome to Your Health Dashboard</h5>
+              <p class="card-text">Track and manage your medications in one place.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Medication Statistics Cards -->
+      <div class="row">
+        <div class="col-md-4 mb-4">
+          <div class="card text-white bg-medication h-100">
+            <div class="card-body">
+              <h5 class="card-title"><i class="fas fa-pills me-2"></i>Active Medications</h5>
+              <p class="card-text display-4" th:text="${dashboard.activeMedicationsCount} ?: '0'"></p>
+              <a th:href="@{/user/medication}" class="text-white stretched-link">
+                <i class="fas fa-arrow-circle-right me-1"></i>View medications
+              </a>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4 mb-4">
+          <div class="card text-white bg-schedule h-100">
+            <div class="card-body">
+              <h5 class="card-title"><i class="fas fa-clock me-2"></i>Today's Doses</h5>
+              <p class="card-text display-4" th:text="${dashboard.todaysDosesCount} ?: '0'"></p>
+              <a th:href="@{/user/schedule}" class="text-white stretched-link">
+                <i class="fas fa-arrow-circle-right me-1"></i>View schedule
+              </a>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4 mb-4">
+          <div class="card text-white bg-health h-100">
+            <div class="card-body">
+              <h5 class="card-title"><i class="fas fa-heartbeat me-2"></i>Health Metrics</h5>
+              <p class="card-text display-4" th:text="${dashboard.healthMetricsCount} ?: '0'"></p>
+              <a th:href="@{/user/health}" class="text-white stretched-link">
+                <i class="fas fa-arrow-circle-right me-1"></i>Track health
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Medication Alerts Section -->
+      <div class="row mt-4">
+        <div class="col-12">
+          <div class="card medication-alert">
+            <div class="card-header bg-danger text-white">
+              <i class="fas fa-exclamation-triangle me-2"></i>Medication Alerts
+            </div>
+            <div class="card-body">
+              <div th:if="${#lists.isEmpty(dashboard.alerts)}" class="alert alert-info">
+                <i class="fas fa-check-circle me-2"></i>No current medication alerts
+              </div>
+              <div th:each="alert : ${dashboard.alerts}" class="alert alert-warning">
+                <strong><i class="fas fa-exclamation-circle me-1"></i><span th:text="${alert.type}"></span>:</strong>
+                <span th:text="${alert.message}"></span>
+                <span th:if="${alert.medicationName}" class="font-italic">
+                  (Medication: <span th:text="${alert.medicationName}"></span>)
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upcoming Medications Section -->
+      <div class="row mt-4">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header bg-success text-white">
+              <i class="fas fa-calendar-check me-2"></i>Upcoming Medications
+            </div>
+            <div class="card-body">
+              <table class="table table-hover">
+                <thead>
+                <tr>
+                  <th><i class="fas fa-pills me-1"></i>Medication</th>
+                  <th><i class="fas fa-syringe me-1"></i>Dosage</th>
+                  <th><i class="fas fa-clock me-1"></i>Next Dose</th>
+                  <th><i class="fas fa-info-circle me-1"></i>Status</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="med : ${dashboard.upcomingMedications}">
+                  <td th:text="${med.name}"></td>
+                  <td th:text="${med.dosage}"></td>
+                  <td th:text="${med.nextDoseTime}"></td>
+                  <td>
+                    <span th:if="${med.taken}" class="badge bg-success">
+                      <i class="fas fa-check me-1"></i>Taken
+                    </span>
+                    <span th:unless="${med.taken}" class="badge bg-warning text-dark">
+                      <i class="fas fa-clock me-1"></i>Pending
+                    </span>
+                  </td>
+                </tr>
+                </tbody>
+              </table>
+              <a th:href="@{/user/schedule}" class="btn btn-outline-success">
+                <i class="fas fa-calendar-alt me-1"></i>View Full Schedule
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bootstrap JS Bundle with Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script th:inline="javascript">
+  document.addEventListener('DOMContentLoaded', function() {
+    /*<![CDATA[*/
+    const hasMeds = [[${dashboard.hasMedications}]];
+    if (!hasMeds) {
+      const modal = new bootstrap.Modal(document.getElementById('noMedicationsModal'));
+      modal.show();
+    }
+    /*]]>*/
+  });
+</script>
+</body>
+</html>

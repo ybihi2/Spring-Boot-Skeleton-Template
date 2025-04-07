@@ -1,4 +1,4 @@
-package com.jydoc.deliverable4;
+package com.jydoc.deliverable4.controllertests;
 
 import com.jydoc.deliverable4.config.TestSecurityConfig;
 import org.junit.jupiter.api.BeforeEach;

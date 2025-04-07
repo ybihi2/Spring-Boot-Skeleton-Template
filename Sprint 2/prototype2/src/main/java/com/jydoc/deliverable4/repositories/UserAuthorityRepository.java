@@ -1,7 +1,7 @@
 package com.jydoc.deliverable4.repositories;
 
-import com.jydoc.deliverable4.model.UserAuthority;
-import com.jydoc.deliverable4.model.UserAuthorityId;
+import com.jydoc.deliverable4.model.auth.UserAuthority;
+import com.jydoc.deliverable4.model.auth.UserAuthorityId;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

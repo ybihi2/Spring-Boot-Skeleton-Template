@@ -1,4 +1,4 @@
-package com.jydoc.deliverable4;
+package com.jydoc.deliverable4.modeltests;
 
 import com.jydoc.deliverable4.model.UserModel;
 import jakarta.persistence.EntityManager;
