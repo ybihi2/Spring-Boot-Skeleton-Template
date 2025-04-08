@@ -42,8 +42,8 @@
 
           <!-- Login Form -->
           <form th:action="@{/auth/login}" method="post">
-            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-
+            <!-- Use this instead of the hidden input for CSRF -->
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
             <div class="mb-3">
               <label for="username" class="form-label">Username or Email</label>
               <input type="text"
