@@ -5,11 +5,15 @@ import com.jydoc.deliverable4.dtos.userdtos.LoginDTO;
 import com.jydoc.deliverable4.model.UserModel;
 import com.jydoc.deliverable4.services.authservices.AuthService;
 import com.jydoc.deliverable4.services.userservices.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -179,13 +183,22 @@ public class AuthController {
      */
     @GetMapping("/logout")
     @PreAuthorize("isAuthenticated()")
-    public String performLogout(HttpSession session) {
+    public String performLogout(HttpSession session, HttpServletRequest request) {
         UserModel user = (UserModel) session.getAttribute(USER_ATTRIBUTE);
         if (user != null) {
             logger.info("User logged out: {}", user.getUsername());
-            session.invalidate();
         }
-        return REDIRECT_LOGIN + "?logout";
+
+        // Invalidate session and clear authentication
+        SecurityContextHolder.clearContext();
+        session.invalidate();
+
+        // Create new CSRF token for the next login
+        CsrfToken newToken = new HttpSessionCsrfTokenRepository().generateToken(request);
+        request.getSession().setAttribute(HttpSessionCsrfTokenRepository.class.getName()
+                .concat(".CSRF_TOKEN"), newToken);
+
+        return REDIRECT_LOGIN + "?logout=true";
     }
 
     /* ==================== HELPER METHODS ==================== */
