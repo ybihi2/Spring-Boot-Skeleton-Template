@@ -1,4 +1,4 @@
-package com.jydoc.deliverable4.dtos;
+package com.jydoc.deliverable4.dtos.userdtos;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;

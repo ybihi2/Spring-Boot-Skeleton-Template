@@ -2,7 +2,7 @@ package com.jydoc.deliverable4.repositorytests;
 
 import com.jydoc.deliverable4.model.auth.AuthorityModel;
 import com.jydoc.deliverable4.model.UserModel;
-import com.jydoc.deliverable4.repositories.UserRepository;
+import com.jydoc.deliverable4.repositories.userrepositories.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

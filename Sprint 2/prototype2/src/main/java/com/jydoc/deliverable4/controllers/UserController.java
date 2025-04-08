@@ -1,9 +1,11 @@
 package com.jydoc.deliverable4.controllers;
 
-import com.jydoc.deliverable4.dtos.DashboardDTO;
+import com.jydoc.deliverable4.dtos.userdtos.DashboardDTO;
 import com.jydoc.deliverable4.dtos.MedicationDTO;
-import com.jydoc.deliverable4.services.DashboardService;
-import com.jydoc.deliverable4.services.MedicationService;
+import com.jydoc.deliverable4.dtos.userdtos.UserDTO;
+import com.jydoc.deliverable4.services.userservices.DashboardService;
+import com.jydoc.deliverable4.services.medicationservices.MedicationService;
+import com.jydoc.deliverable4.services.userservices.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
@@ -12,6 +14,8 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
 import javax.validation.Valid;
 
 @Controller
@@ -22,15 +26,18 @@ public class UserController {
 
     private final DashboardService dashboardService;
     private final MedicationService medicationService;
+    private final UserService userService;  // Added UserService
 
     public UserController(DashboardService dashboardService,
-                          MedicationService medicationService) {
+                          MedicationService medicationService,
+                          UserService userService) {
         this.dashboardService = dashboardService;
         this.medicationService = medicationService;
+        this.userService = userService;
         logger.info("UserController initialized");
     }
 
-    // Dashboard and Profile Endpoints (unchanged)
+    // Existing Endpoints (unchanged)
     @GetMapping("/dashboard")
     public String showDashboard(@AuthenticationPrincipal UserDetails userDetails, Model model) {
         logger.debug("Loading dashboard for user: {}", userDetails.getUsername());
@@ -40,23 +47,111 @@ public class UserController {
         return "user/dashboard";
     }
 
+    // Modified Profile Endpoints
     @GetMapping("/profile")
-    public String showProfile(@AuthenticationPrincipal UserDetails userDetails) {
+    public String showProfile(@AuthenticationPrincipal UserDetails userDetails, Model model) {
         logger.debug("Loading profile for user: {}", userDetails.getUsername());
+        UserDTO user = userService.getUserByUsername(userDetails.getUsername());
+        model.addAttribute("user", user);
         return "user/profile";
     }
 
+    @PostMapping("/profile/update")
+    public String updateProfile(
+            @Valid @ModelAttribute("user") UserDTO userDTO,
+            BindingResult result,
+            @AuthenticationPrincipal UserDetails userDetails,
+            RedirectAttributes redirectAttributes) {
+
+        if (result.hasErrors()) {
+            logger.warn("Validation errors in profile update: {}", result.getAllErrors());
+            return "user/profile";
+        }
+
+        try {
+            userService.updateUserProfile(userDetails.getUsername(), userDTO);
+            redirectAttributes.addFlashAttribute("success", "Profile updated successfully");
+        } catch (Exception e) {
+            logger.error("Error updating profile: {}", e.getMessage());
+            redirectAttributes.addFlashAttribute("error", "Failed to update profile");
+        }
+
+        return "redirect:/user/profile";
+    }
+
+    @PostMapping("/profile/change-password")
+    public String changePassword(
+            @RequestParam("currentPassword") String currentPassword,
+            @RequestParam("newPassword") String newPassword,
+            @RequestParam("confirmPassword") String confirmPassword,
+            @AuthenticationPrincipal UserDetails userDetails,
+            RedirectAttributes redirectAttributes) {
+
+        if (!newPassword.equals(confirmPassword)) {
+            redirectAttributes.addFlashAttribute("error", "New passwords do not match");
+            return "redirect:/user/profile";
+        }
+
+        if (!isValidPassword(newPassword)) {
+            redirectAttributes.addFlashAttribute("error",
+                    "Password must be at least 6 characters with one uppercase, one lowercase letter and one number");
+            return "redirect:/user/profile";
+        }
+
+        try {
+            boolean passwordChanged = userService.changePassword(
+                    userDetails.getUsername(),
+                    currentPassword,
+                    newPassword
+            );
+            if (passwordChanged) {
+                redirectAttributes.addFlashAttribute("success", "Password changed successfully");
+            } else {
+                redirectAttributes.addFlashAttribute("error", "Current password is incorrect");
+            }
+        } catch (Exception e) {
+            logger.error("Error changing password: {}", e.getMessage());
+            redirectAttributes.addFlashAttribute("error", "Failed to change password");
+        }
+
+        return "redirect:/user/profile";
+    }
+
+    @PostMapping("/profile/delete")
+    public String deleteAccount(
+            @RequestParam("deletePassword") String password,
+            @RequestParam("confirmDelete") boolean confirmDelete,
+            @AuthenticationPrincipal UserDetails userDetails,
+            RedirectAttributes redirectAttributes) {
+
+        if (!confirmDelete) {
+            redirectAttributes.addFlashAttribute("error", "Please confirm account deletion");
+            return "redirect:/user/profile";
+        }
+
+        try {
+            boolean deleted = userService.deleteAccount(userDetails.getUsername(), password);
+            if (deleted) {
+                return "redirect:/auth/logout";
+            } else {
+                redirectAttributes.addFlashAttribute("error", "Incorrect password");
+            }
+        } catch (Exception e) {
+            logger.error("Error deleting account: {}", e.getMessage());
+            redirectAttributes.addFlashAttribute("error", "Failed to delete account");
+        }
+        return "redirect:/user/profile";
+    }
+
+    // Existing Medication Endpoints (unchanged)
     @GetMapping("/medication")
-    public String showMedications(@AuthenticationPrincipal UserDetails userDetails,
-                                  Model model) {
+    public String showMedications(@AuthenticationPrincipal UserDetails userDetails, Model model) {
         logger.debug("Loading medications for user: {}", userDetails.getUsername());
         model.addAttribute("medications",
                 medicationService.getUserMedications(userDetails.getUsername()));
         return "user/medication/list";
     }
 
-
-    // Medication Management Endpoints
     @GetMapping("/medication/list")
     public String showMedicationList(@AuthenticationPrincipal UserDetails userDetails, Model model) {
         logger.debug("Loading medications for user: {}", userDetails.getUsername());
@@ -64,8 +159,6 @@ public class UserController {
                 medicationService.getUserMedications(userDetails.getUsername()));
         return "user/medication/list";
     }
-
-
 
     @GetMapping("/medication/add")
     public String showAddMedicationForm(Model model) {
@@ -78,18 +171,15 @@ public class UserController {
             @Valid @ModelAttribute("medicationDTO") MedicationDTO medicationDTO,
             BindingResult result,
             @AuthenticationPrincipal UserDetails userDetails) {
-
         if (result.hasErrors()) {
             logger.warn("Validation errors: {}", result.getAllErrors());
             return "user/medication/add";
         }
-
         try {
             medicationService.createMedication(medicationDTO, userDetails.getUsername());
             return "redirect:/user/medication?success";
         } catch (Exception e) {
             logger.error("Error adding medication: {}", e.getMessage());
-            // Return to form with error (model will preserve the entered data)
             return "user/medication/add";
         }
     }
@@ -107,11 +197,9 @@ public class UserController {
             @Valid @ModelAttribute("medicationDTO") MedicationDTO medicationDTO,
             BindingResult result,
             Model model) {
-
         if (result.hasErrors()) {
             return "user/medication/edit";
         }
-
         try {
             medicationService.updateMedication(id, medicationDTO);
             return "redirect:/user/medication?updated";
@@ -132,14 +220,7 @@ public class UserController {
         }
     }
 
-    // Schedule and Refills Endpoints
-//    @GetMapping("/schedule")
-//    public String showSchedule(@AuthenticationPrincipal UserDetails userDetails, Model model) {
-//        model.addAttribute("schedule",
-//                medicationService.getMedicationSchedule(userDetails.getUsername()));
-//        return "user/schedule";
-//    }
-
+    // Existing Schedule and Refills Endpoints (unchanged)
     @GetMapping("/refills")
     public String showRefills(@AuthenticationPrincipal UserDetails userDetails, Model model) {
         model.addAttribute("refills",
@@ -150,5 +231,22 @@ public class UserController {
     @GetMapping("/health")
     public String showHealthMetrics() {
         return "user/health";
+    }
+
+    // Helper method for password validation
+    private boolean isValidPassword(String password) {
+        if (password.length() < 6) return false;
+
+        boolean hasUppercase = false;
+        boolean hasLowercase = false;
+        boolean hasNumber = false;
+
+        for (char c : password.toCharArray()) {
+            if (Character.isUpperCase(c)) hasUppercase = true;
+            if (Character.isLowerCase(c)) hasLowercase = true;
+            if (Character.isDigit(c)) hasNumber = true;
+        }
+
+        return hasUppercase && hasLowercase && hasNumber;
     }
 }

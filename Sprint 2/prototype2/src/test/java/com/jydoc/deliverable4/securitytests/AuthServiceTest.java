@@ -1,13 +1,13 @@
 package com.jydoc.deliverable4.securitytests;
 
-import com.jydoc.deliverable4.dtos.LoginDTO;
-import com.jydoc.deliverable4.dtos.UserDTO;
+import com.jydoc.deliverable4.dtos.userdtos.LoginDTO;
+import com.jydoc.deliverable4.dtos.userdtos.UserDTO;
 import com.jydoc.deliverable4.model.auth.AuthorityModel;
 import com.jydoc.deliverable4.model.UserModel;
-import com.jydoc.deliverable4.repositories.AuthorityRepository;
-import com.jydoc.deliverable4.repositories.UserRepository;
-import com.jydoc.deliverable4.services.AuthService;
-import com.jydoc.deliverable4.services.UserValidationHelper;
+import com.jydoc.deliverable4.repositories.userrepositories.AuthorityRepository;
+import com.jydoc.deliverable4.repositories.userrepositories.UserRepository;
+import com.jydoc.deliverable4.services.authservices.AuthService;
+import com.jydoc.deliverable4.services.userservices.UserValidationHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

@@ -1,9 +1,9 @@
-package com.jydoc.deliverable4.services;
+package com.jydoc.deliverable4.services.userservices;
 
-import com.jydoc.deliverable4.dtos.UserDTO;
+import com.jydoc.deliverable4.dtos.userdtos.UserDTO;
 import com.jydoc.deliverable4.security.Exceptions.EmailExistsException;
 import com.jydoc.deliverable4.security.Exceptions.UsernameExistsException;
-import com.jydoc.deliverable4.repositories.UserRepository;
+import com.jydoc.deliverable4.repositories.userrepositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
