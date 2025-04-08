@@ -2,7 +2,7 @@ package com.jydoc.deliverable4.securitytests;
 
 import com.jydoc.deliverable4.model.auth.AuthorityModel;
 import com.jydoc.deliverable4.model.UserModel;
-import com.jydoc.deliverable4.repositories.UserRepository;
+import com.jydoc.deliverable4.repositories.userrepositories.UserRepository;
 import com.jydoc.deliverable4.security.auth.CustomUserDetailsService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

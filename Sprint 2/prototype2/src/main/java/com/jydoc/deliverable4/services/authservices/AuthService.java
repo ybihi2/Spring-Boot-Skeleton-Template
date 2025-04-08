@@ -1,11 +1,12 @@
-package com.jydoc.deliverable4.services;
+package com.jydoc.deliverable4.services.authservices;
 
-import com.jydoc.deliverable4.dtos.LoginDTO;
-import com.jydoc.deliverable4.dtos.UserDTO;
+import com.jydoc.deliverable4.dtos.userdtos.LoginDTO;
+import com.jydoc.deliverable4.dtos.userdtos.UserDTO;
 import com.jydoc.deliverable4.model.auth.AuthorityModel;
 import com.jydoc.deliverable4.model.UserModel;
-import com.jydoc.deliverable4.repositories.AuthorityRepository;
-import com.jydoc.deliverable4.repositories.UserRepository;
+import com.jydoc.deliverable4.repositories.userrepositories.AuthorityRepository;
+import com.jydoc.deliverable4.repositories.userrepositories.UserRepository;
+import com.jydoc.deliverable4.services.userservices.UserValidationHelper;
 import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

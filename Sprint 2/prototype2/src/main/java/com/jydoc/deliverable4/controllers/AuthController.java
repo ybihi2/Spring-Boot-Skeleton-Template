@@ -1,10 +1,10 @@
 package com.jydoc.deliverable4.controllers;
 
-import com.jydoc.deliverable4.dtos.UserDTO;
-import com.jydoc.deliverable4.dtos.LoginDTO;
+import com.jydoc.deliverable4.dtos.userdtos.UserDTO;
+import com.jydoc.deliverable4.dtos.userdtos.LoginDTO;
 import com.jydoc.deliverable4.model.UserModel;
-import com.jydoc.deliverable4.services.AuthService;
-import com.jydoc.deliverable4.services.UserService;
+import com.jydoc.deliverable4.services.authservices.AuthService;
+import com.jydoc.deliverable4.services.userservices.UserService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;

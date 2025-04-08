@@ -1,10 +1,12 @@
-package com.jydoc.deliverable4.services;
+package com.jydoc.deliverable4.services.userservices;
 
+import com.jydoc.deliverable4.dtos.userdtos.UserDTO;
 import com.jydoc.deliverable4.model.UserModel;
-import com.jydoc.deliverable4.repositories.UserRepository;
+import com.jydoc.deliverable4.repositories.userrepositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +19,7 @@ import java.util.Optional;
  * - User existence checks
  * - User updates and deletions
  * - User counting and listing
+ * - Profile management
  *
  * <p>All methods are transactional with appropriate read-only or read-write semantics.</p>
  *
@@ -29,50 +32,27 @@ public class UserService {
     private static final Logger logger = LogManager.getLogger(UserService.class);
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;  // Added for password handling
 
     /* ====================== User Retrieval Methods ====================== */
 
-    /**
-     * Finds an active user by username or email (case-insensitive).
-     *
-     * @param usernameOrEmail The username or email to search for (whitespace trimmed)
-     * @return Optional containing the found active user, or empty if not found or inactive
-     */
     @Transactional(readOnly = true)
     public Optional<UserModel> findActiveUser(String usernameOrEmail) {
         return userRepository.findByUsernameOrEmail(usernameOrEmail.trim().toLowerCase())
                 .filter(UserModel::isEnabled);
     }
 
-    /**
-     * Retrieves a user by their exact username (case-sensitive).
-     *
-     * @param username The exact username to search for
-     * @return Found UserModel entity
-     * @throws IllegalArgumentException if no user found with given username
-     */
     @Transactional(readOnly = true)
     public UserModel findByUsername(String username) {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
     }
 
-    /**
-     * Retrieves a user by their unique identifier.
-     *
-     * @param id The user's unique ID
-     * @return Optional containing the found user, or empty if not found
-     */
     @Transactional(readOnly = true)
     public Optional<UserModel> getUserById(Long id) {
         return userRepository.findById(id);
     }
 
-    /**
-     * Retrieves all users in the system.
-     *
-     * @return List of all UserModel entities, empty list if none exist
-     */
     @Transactional(readOnly = true)
     public List<UserModel> getAllUsers() {
         return userRepository.findAll();
@@ -80,22 +60,11 @@ public class UserService {
 
     /* ====================== User Status Methods ====================== */
 
-    /**
-     * Checks if a user exists with the given ID.
-     *
-     * @param id The user ID to check
-     * @return true if a user exists with this ID, false otherwise
-     */
     @Transactional(readOnly = true)
     public boolean existsById(Long id) {
         return userRepository.existsById(id);
     }
 
-    /**
-     * Gets the total count of users in the system.
-     *
-     * @return The number of users
-     */
     @Transactional(readOnly = true)
     public long getUserCount() {
         return userRepository.count();
@@ -103,15 +72,6 @@ public class UserService {
 
     /* ====================== User Modification Methods ====================== */
 
-    /**
-     * Updates an existing user.
-     *
-     * <p>Note: The entire user entity will be updated. For partial updates,
-     * consider adding dedicated methods.</p>
-     *
-     * @param user The user entity to update
-     * @throws IllegalArgumentException if the user is null
-     */
     @Transactional
     public void updateUser(UserModel user) {
         if (user == null) {
@@ -121,12 +81,6 @@ public class UserService {
         logger.debug("Updated user with ID: {}", user.getId());
     }
 
-    /**
-     * Deletes a user by their unique identifier.
-     *
-     * @param id The ID of the user to delete
-     * @throws IllegalArgumentException if no user exists with this ID
-     */
     @Transactional
     public void deleteUser(Long id) {
         if (!userRepository.existsById(id)) {
@@ -134,5 +88,71 @@ public class UserService {
         }
         userRepository.deleteById(id);
         logger.debug("Deleted user with ID: {}", id);
+    }
+
+    /* ====================== Profile Management Methods ====================== */
+
+    @Transactional(readOnly = true)
+    public UserDTO getUserByUsername(String username) {
+        UserModel user = findByUsername(username);
+        return convertToDTO(user);
+    }
+
+
+    @Transactional
+    public void updateUserProfile(String username, UserDTO userDTO) {
+        UserModel user = findByUsername(username);
+
+        // Update only the fields we allow to be modified
+        user.setFirstName(userDTO.getFirstName());
+        user.setLastName(userDTO.getLastName());
+        user.setEmail(userDTO.getEmail());
+
+        userRepository.save(user);
+        logger.debug("Updated profile for user: {}", username);
+    }
+
+
+    @Transactional
+    public boolean changePassword(String username, String currentPassword, String newPassword) {
+        UserModel user = findByUsername(username);
+
+        // Verify current password
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            logger.debug("Password verification failed for user: {}", username);
+            return false;
+        }
+
+        // Set new password
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+        logger.debug("Password changed successfully for user: {}", username);
+        return true;
+    }
+
+    @Transactional
+    public boolean deleteAccount(String username, String password) {
+        UserModel user = findByUsername(username);
+
+        // Verify password before deletion
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            logger.debug("Password verification failed for account deletion: {}", username);
+            return false;
+        }
+
+        userRepository.delete(user);
+        logger.info("Account deleted for user: {}", username);
+        return true;
+    }
+
+    /* ====================== Helper Methods ====================== */
+
+    private UserDTO convertToDTO(UserModel user) {
+        UserDTO dto = new UserDTO();
+        dto.setUsername(user.getUsername());
+        dto.setEmail(user.getEmail());
+        dto.setFirstName(user.getFirstName());
+        dto.setLastName(user.getLastName());
+        return dto;
     }
 }

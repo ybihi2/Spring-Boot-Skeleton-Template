@@ -1,4 +1,4 @@
-package com.jydoc.deliverable4.services;
+package com.jydoc.deliverable4.services.medicationservices;
 
 import com.jydoc.deliverable4.dtos.MedicationDTO;
 import com.jydoc.deliverable4.dtos.MedicationScheduleDTO;

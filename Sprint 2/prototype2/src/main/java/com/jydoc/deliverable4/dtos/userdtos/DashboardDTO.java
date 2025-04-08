@@ -1,4 +1,4 @@
-package com.jydoc.deliverable4.dtos;
+package com.jydoc.deliverable4.dtos.userdtos;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -8,6 +8,8 @@ import java.util.List;
 
 @Data
 public class DashboardDTO {
+
+
     private String username;
     private List<String> healthConditions;
     private int activeMedicationsCount;

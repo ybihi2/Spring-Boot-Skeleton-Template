@@ -1,6 +1,6 @@
-package com.jydoc.deliverable4.services;
+package com.jydoc.deliverable4.services.userservices;
 
-import com.jydoc.deliverable4.dtos.DashboardDTO;
+import com.jydoc.deliverable4.dtos.userdtos.DashboardDTO;
 import org.springframework.security.core.userdetails.UserDetails;
 
 /**

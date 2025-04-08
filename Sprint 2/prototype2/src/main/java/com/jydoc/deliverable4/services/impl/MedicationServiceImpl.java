@@ -1,12 +1,16 @@
 package com.jydoc.deliverable4.services.impl;
 
-import com.jydoc.deliverable4.dtos.*;
+import com.jydoc.deliverable4.dtos.MedicationDTO;
+import com.jydoc.deliverable4.dtos.MedicationScheduleDTO;
+import com.jydoc.deliverable4.dtos.RefillReminderDTO;
 import com.jydoc.deliverable4.model.*;
-import com.jydoc.deliverable4.repositories.*;
+import com.jydoc.deliverable4.repositories.medicationrepositories.MedicationIntakeTimeRepository;
+import com.jydoc.deliverable4.repositories.medicationrepositories.MedicationRepository;
+import com.jydoc.deliverable4.repositories.userrepositories.UserRepository;
 import com.jydoc.deliverable4.security.Exceptions.MedicationNotFoundException;
 import com.jydoc.deliverable4.security.Exceptions.MedicationScheduleException;
 import com.jydoc.deliverable4.security.Exceptions.UserNotFoundException;
-import com.jydoc.deliverable4.services.MedicationService;
+import com.jydoc.deliverable4.services.medicationservices.MedicationService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

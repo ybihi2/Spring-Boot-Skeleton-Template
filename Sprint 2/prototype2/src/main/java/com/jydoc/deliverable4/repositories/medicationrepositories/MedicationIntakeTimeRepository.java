@@ -1,4 +1,4 @@
-package com.jydoc.deliverable4.repositories;
+package com.jydoc.deliverable4.repositories.medicationrepositories;
 
 import com.jydoc.deliverable4.model.MedicationIntakeTime;
 import org.springframework.data.jpa.repository.JpaRepository;

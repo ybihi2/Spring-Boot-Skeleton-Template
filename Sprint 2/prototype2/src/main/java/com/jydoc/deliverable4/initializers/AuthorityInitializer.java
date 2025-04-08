@@ -1,7 +1,7 @@
 package com.jydoc.deliverable4.initializers;
 
 import com.jydoc.deliverable4.model.auth.AuthorityModel;
-import com.jydoc.deliverable4.repositories.AuthorityRepository;
+import com.jydoc.deliverable4.repositories.userrepositories.AuthorityRepository;
 import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;

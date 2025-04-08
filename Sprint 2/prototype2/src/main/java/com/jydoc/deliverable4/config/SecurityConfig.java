@@ -134,7 +134,7 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)  // Create session when needed
                 .invalidSessionUrl("/auth/login?invalid-session")  // Redirect for invalid sessions
                 .maximumSessions(1)  // Allow only one session per user
-                .maxSessionsPreventsLogin(false)  // Don't prevent new logins
+                .maxSessionsPreventsLogin(true)  // Don't prevent new logins
                 .expiredUrl("/auth/login?session-expired")  // Redirect for expired sessions
         );
     }
