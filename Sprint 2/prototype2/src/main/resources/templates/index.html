@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="en">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -158,6 +157,16 @@
             padding: 1rem 1.5rem;
             border-top: 1px solid #e3e6f0;
         }
+
+        /* Fixes for clickable buttons */
+        .navbar .btn {
+            pointer-events: auto !important;
+            position: relative;
+            z-index: 1000;
+        }
+        .navbar-collapse {
+            overflow: visible !important;
+        }
     </style>
 </head>
 <body>
@@ -186,21 +195,13 @@
                 </li>
             </ul>
             <div class="d-flex">
-                <a sec:authorize="isAnonymous()" th:href="@{/auth/login}" class="btn btn-outline-primary me-2">
+                <a href="login.html" class="btn btn-outline-primary me-2">
                     <i class="fas fa-sign-in-alt me-1"></i> Login
                 </a>
-                <a sec:authorize="isAnonymous()" th:href="@{/auth/register}" class="btn btn-primary">
+                <a href="register.html" class="btn btn-primary">
                     <i class="fas fa-user-plus me-1"></i> Register
                 </a>
-                <a sec:authorize="isAuthenticated()" th:href="@{/user/dashboard}" class="btn btn-primary">
-                    <i class="fas fa-tachometer-alt me-1"></i> Dashboard
-                </a>
-                <form sec:authorize="isAuthenticated()" th:action="@{/auth/logout}" method="post" class="ms-2">
-                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                    <button type="submit" class="btn btn-outline-danger">
-                        <i class="fas fa-sign-out-alt me-1"></i> Logout
-                    </button>
-                </form>
+                <!-- Remove authenticated-only buttons for static version -->
             </div>
         </div>
     </div>
@@ -215,11 +216,8 @@
                 <h1 class="display-4 fw-bold mb-4">Take Control of Your Medication</h1>
                 <p class="lead mb-4">HealthTrack helps you manage medications, track doses, and monitor health metrics - all in one place.</p>
                 <div class="d-flex flex-wrap gap-3">
-                    <a sec:authorize="isAnonymous()" th:href="@{/auth/register}" class="btn btn-cta btn-cta-primary">
+                    <a href="register.html" class="btn btn-cta btn-cta-primary">
                         <i class="fas fa-user-plus me-2"></i> Get Started Free
-                    </a>
-                    <a sec:authorize="isAuthenticated()" th:href="@{/user/dashboard}" class="btn btn-cta btn-cta-primary">
-                        <i class="fas fa-tachometer-alt me-2"></i> Go to Dashboard
                     </a>
                     <a href="#features" class="btn btn-cta btn-cta-outline">
                         <i class="fas fa-info-circle me-2"></i> Learn More
@@ -435,11 +433,8 @@
         <h2 class="fw-bold mb-4">Ready to Take Control of Your Health?</h2>
         <p class="lead mb-4 mx-auto" style="max-width: 700px;">Join thousands of users who are managing their medications more effectively with HealthTrack.</p>
         <div class="d-flex justify-content-center gap-3">
-            <a sec:authorize="isAnonymous()" th:href="@{/auth/register}" class="btn btn-light btn-lg px-4">
+            <a href="register.html" class="btn btn-light btn-lg px-4">
                 <i class="fas fa-user-plus me-2"></i> Sign Up Free
-            </a>
-            <a sec:authorize="isAuthenticated()" th:href="@{/user/dashboard}" class="btn btn-light btn-lg px-4">
-                <i class="fas fa-tachometer-alt me-2"></i> Go to Dashboard
             </a>
         </div>
     </div>
