@@ -13,19 +13,43 @@ import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Implementation of the DashboardService interface that provides methods for retrieving
+ * and processing user dashboard data including medication schedules, health metrics,
+ * and alerts.
+ */
 @Service
 public class DashboardServiceImpl implements DashboardService {
     private static final Logger logger = LoggerFactory.getLogger(DashboardServiceImpl.class);
 
     private final MedicationService medicationService;
 
+    /**
+     * Constructs a new DashboardServiceImpl with the required MedicationService dependency.
+     *
+     * @param medicationService The medication service used to retrieve medication data
+     */
     public DashboardServiceImpl(MedicationService medicationService) {
         this.medicationService = medicationService;
+        logger.debug("DashboardServiceImpl initialized with MedicationService");
     }
 
+    /**
+     * Retrieves and processes all dashboard data for the specified user.
+     * This includes medication schedules, health conditions, metrics, and alerts.
+     *
+     * @param userDetails The authenticated user details
+     * @return DashboardDTO containing all dashboard data for the user
+     * @throws IllegalArgumentException if userDetails is null
+     * @throws RuntimeException if there's an error processing dashboard data
+     */
     @Override
     public DashboardDTO getUserDashboardData(UserDetails userDetails) {
+        logger.debug("Entering getUserDashboardData for user: {}",
+                userDetails != null ? userDetails.getUsername() : "null");
+
         if (userDetails == null) {
+            logger.error("UserDetails parameter cannot be null");
             throw new IllegalArgumentException("UserDetails cannot be null");
         }
 
@@ -36,23 +60,33 @@ public class DashboardServiceImpl implements DashboardService {
         dashboard.setUsername(username);
 
         try {
-            // Set health conditions (in a real app, this would come from a health service)
-            dashboard.setHealthConditions(Arrays.asList("Hypertension", "Type 2 Diabetes"));
+            // Set placeholder health conditions (would come from health service in production)
+            logger.debug("Setting placeholder health conditions for user: {}", username);
+            dashboard.setHealthConditions(Arrays.asList("Placeholder", "Placeholder"));
 
-            // Get and process medication data
+            // Retrieve and process medication schedule
+            logger.debug("Retrieving medication schedule for user: {}", username);
             List<MedicationScheduleDTO> schedule = medicationService.getMedicationSchedule(username);
-            List<DashboardDTO.UpcomingMedicationDto> upcomingMeds = processMedicationSchedule(schedule);
+            logger.debug("Retrieved {} medication schedule entries for user: {}",
+                    schedule.size(), username);
 
-            // Set dashboard metrics
+            List<DashboardDTO.UpcomingMedicationDto> upcomingMeds = processMedicationSchedule(schedule);
+            logger.debug("Processed {} upcoming medications for user: {}",
+                    upcomingMeds.size(), username);
+
+            // Set all dashboard metrics
+            logger.debug("Setting dashboard metrics for user: {}", username);
             dashboard.setActiveMedicationsCount(countActiveMedications(schedule));
             dashboard.setTodaysDosesCount(upcomingMeds.size());
-            dashboard.setHealthMetricsCount(3); // Placeholder - would come from health service
+            dashboard.setHealthMetricsCount(0); // Placeholder - would come from health service
             dashboard.setHasMedications(!schedule.isEmpty());
             dashboard.setUpcomingMedications(upcomingMeds);
 
-            // Generate alerts (in a real app, these would come from an alert service)
+            // Generate medication alerts
+            logger.debug("Generating medication alerts for user: {}", username);
             dashboard.setAlerts(generateMedicationAlerts(schedule));
 
+            logger.info("Successfully built dashboard for user: {}", username);
         } catch (Exception e) {
             logger.error("Error building dashboard for user {}: {}", username, e.getMessage(), e);
             throw new RuntimeException("Failed to build dashboard data", e);
@@ -61,68 +95,150 @@ public class DashboardServiceImpl implements DashboardService {
         return dashboard;
     }
 
+    /**
+     * Processes the medication schedule to extract upcoming doses.
+     * Filters medications with future schedule times and sorts them chronologically.
+     *
+     * @param schedule The list of medication schedule DTOs
+     * @return List of upcoming medications sorted by schedule time
+     */
     private List<DashboardDTO.UpcomingMedicationDto> processMedicationSchedule(List<MedicationScheduleDTO> schedule) {
+        logger.debug("Processing medication schedule with {} entries",
+                schedule != null ? schedule.size() : "null");
+
         if (schedule == null || schedule.isEmpty()) {
+            logger.debug("Empty or null schedule provided, returning empty list");
             return Collections.emptyList();
         }
 
-        return schedule.stream()
-                .filter(med -> med.getScheduleTime() != null && med.getScheduleTime().isAfter(LocalTime.now()))
+        LocalTime now = LocalTime.now();
+        logger.debug("Current time for schedule filtering: {}", now);
+
+        List<DashboardDTO.UpcomingMedicationDto> result = schedule.stream()
+                .filter(med -> {
+                    boolean isValid = med.getScheduleTime() != null && med.getScheduleTime().isAfter(now);
+                    if (!isValid) {
+                        logger.trace("Filtered out medication {} with schedule time {}",
+                                med.getMedicationName(), med.getScheduleTime());
+                    }
+                    return isValid;
+                })
                 .sorted(Comparator.comparing(MedicationScheduleDTO::getScheduleTime))
                 .map(this::convertToUpcomingMedicationDto)
                 .collect(Collectors.toList());
+
+        logger.debug("Processed {} upcoming medications from schedule", result.size());
+        return result;
     }
 
+    /**
+     * Converts a MedicationScheduleDTO to an UpcomingMedicationDto for dashboard display.
+     *
+     * @param scheduleDto The medication schedule DTO to convert
+     * @return UpcomingMedicationDto with relevant medication details
+     */
     private DashboardDTO.UpcomingMedicationDto convertToUpcomingMedicationDto(MedicationScheduleDTO scheduleDto) {
+        logger.debug("Converting MedicationScheduleDTO to UpcomingMedicationDto for medication: {}",
+                scheduleDto.getMedicationName());
+
         DashboardDTO.UpcomingMedicationDto dto = new DashboardDTO.UpcomingMedicationDto();
         dto.setName(scheduleDto.getMedicationName());
         dto.setDosage(scheduleDto.getDosage());
         dto.setNextDoseTime(scheduleDto.getScheduleTime().toString());
         dto.setTaken(scheduleDto.isTaken());
+
+        logger.trace("Converted medication details: name={}, dosage={}, time={}, taken={}",
+                dto.getName(), dto.getDosage(), dto.getNextDoseTime(), dto.isTaken());
+
         return dto;
     }
 
+    /**
+     * Counts the number of distinct active medications in the schedule.
+     *
+     * @param schedule The list of medication schedule DTOs
+     * @return Count of distinct active medications
+     */
     private int countActiveMedications(List<MedicationScheduleDTO> schedule) {
-        if (schedule == null) return 0;
-        return (int) schedule.stream()
+        logger.debug("Counting active medications in schedule with {} entries",
+                schedule != null ? schedule.size() : "null");
+
+        if (schedule == null) {
+            logger.debug("Null schedule provided, returning 0 active medications");
+            return 0;
+        }
+
+        int count = (int) schedule.stream()
                 .map(MedicationScheduleDTO::getMedicationId)
                 .distinct()
                 .count();
+
+        logger.debug("Found {} distinct active medications", count);
+        return count;
     }
 
+    /**
+     * Generates placeholder medication alerts for the dashboard.
+     * In a production environment, this would check for actual refill needs,
+     * interactions, and other medication-related alerts.
+     *
+     * @param schedule The list of medication schedule DTOs
+     * @return List of generated medication alerts
+     */
     private List<DashboardDTO.MedicationAlertDto> generateMedicationAlerts(List<MedicationScheduleDTO> schedule) {
+        logger.debug("Generating medication alerts for schedule with {} entries",
+                schedule != null ? schedule.size() : "null");
+
         List<DashboardDTO.MedicationAlertDto> alerts = new ArrayList<>();
 
-        // Sample refill alert (in real app, would check actual refill status)
+        // Sample refill alert (would check actual refill status in production)
         if (!schedule.isEmpty()) {
+            logger.trace("Adding placeholder refill alert");
             alerts.add(new DashboardDTO.MedicationAlertDto(
-                    "Refill",
-                    "Your medication 'Lisinopril' needs a refill soon",
-                    "Lisinopril"
+                    "Refill Needed",
+                    "Your prescription is running low",
+                    schedule.get(0).getMedicationName()
             ));
         }
 
-        // Sample interaction alert
+        // Sample interaction alert (would check actual interactions in production)
+        logger.trace("Adding placeholder interaction alert");
         alerts.add(new DashboardDTO.MedicationAlertDto(
-                "Interaction",
-                "Potential interaction between Metformin and Ibuprofen",
-                "Metformin"
+                "Interaction Warning",
+                "Potential interaction detected",
+                "Multiple medications"
         ));
 
+        logger.debug("Generated {} medication alerts", alerts.size());
         return alerts;
     }
 
+    /**
+     * Checks if the user has any medications in their schedule.
+     *
+     * @param userDetails The authenticated user details
+     * @return true if the user has medications, false otherwise
+     * @throws IllegalArgumentException if userDetails is null
+     */
     @Override
     public boolean hasMedications(UserDetails userDetails) {
+        logger.debug("Checking if user has medications: {}",
+                userDetails != null ? userDetails.getUsername() : "null");
+
         if (userDetails == null) {
+            logger.error("UserDetails parameter cannot be null");
             throw new IllegalArgumentException("UserDetails cannot be null");
         }
 
         try {
             List<MedicationScheduleDTO> schedule = medicationService.getMedicationSchedule(userDetails.getUsername());
-            return schedule != null && !schedule.isEmpty();
+            boolean hasMeds = schedule != null && !schedule.isEmpty();
+
+            logger.debug("User {} has medications: {}", userDetails.getUsername(), hasMeds);
+            return hasMeds;
         } catch (Exception e) {
-            logger.error("Error checking medications for user {}: {}", userDetails.getUsername(), e.getMessage());
+            logger.error("Error checking medications for user {}: {}",
+                    userDetails.getUsername(), e.getMessage(), e);
             return false;
         }
     }
