@@ -195,8 +195,8 @@ public class DashboardServiceImpl implements DashboardService {
         if (!schedule.isEmpty()) {
             logger.trace("Adding placeholder refill alert");
             alerts.add(new DashboardDTO.MedicationAlertDto(
-                    "Refill Needed",
-                    "Your prescription is running low",
+                    "Placeholder",
+                    "Placeholder",
                     schedule.get(0).getMedicationName()
             ));
         }
@@ -204,9 +204,9 @@ public class DashboardServiceImpl implements DashboardService {
         // Sample interaction alert (would check actual interactions in production)
         logger.trace("Adding placeholder interaction alert");
         alerts.add(new DashboardDTO.MedicationAlertDto(
-                "Interaction Warning",
-                "Potential interaction detected",
-                "Multiple medications"
+                "Placeholder",
+                "Placeholder",
+                "Placeholder"
         ));
 
         logger.debug("Generated {} medication alerts", alerts.size());

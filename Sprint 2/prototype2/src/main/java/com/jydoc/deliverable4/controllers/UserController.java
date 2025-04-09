@@ -287,6 +287,8 @@ public class UserController {
         try {
             model.addAttribute("medications",
                     medicationService.getUserMedications(userDetails.getUsername()));
+            // Add the username to the model
+            model.addAttribute("username", userDetails.getUsername());
             logger.info("Medications loaded successfully for user: {}", userDetails.getUsername());
             return "user/medication/list";
         } catch (Exception e) {
@@ -310,6 +312,8 @@ public class UserController {
         try {
             model.addAttribute("medications",
                     medicationService.getUserMedications(userDetails.getUsername()));
+            // Add the username to the model
+            model.addAttribute("username", userDetails.getUsername());
             return "user/medication/list";
         } catch (Exception e) {
             logger.error("Failed to load medications via list endpoint for user {}: {}",
