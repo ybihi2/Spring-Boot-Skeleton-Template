@@ -3,9 +3,12 @@ package com.jydoc.deliverable4.controllers;
 import com.jydoc.deliverable4.dtos.userdtos.DashboardDTO;
 import com.jydoc.deliverable4.dtos.MedicationDTO;
 import com.jydoc.deliverable4.dtos.userdtos.UserDTO;
+import com.jydoc.deliverable4.security.Exceptions.PasswordMismatchException;
+import com.jydoc.deliverable4.security.Exceptions.WeakPasswordException;
 import com.jydoc.deliverable4.services.userservices.DashboardService;
 import com.jydoc.deliverable4.services.medicationservices.MedicationService;
 import com.jydoc.deliverable4.services.userservices.UserService;
+import jakarta.validation.constraints.NotBlank;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
@@ -23,6 +26,9 @@ import javax.validation.Valid;
 public class UserController {
 
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
+
+    private static final String PASSWORD_PATTERN =
+            "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{6,}$";
 
     private final DashboardService dashboardService;
     private final MedicationService medicationService;
@@ -81,41 +87,37 @@ public class UserController {
 
     @PostMapping("/profile/change-password")
     public String changePassword(
-            @RequestParam("currentPassword") String currentPassword,
-            @RequestParam("newPassword") String newPassword,
-            @RequestParam("confirmPassword") String confirmPassword,
+            @RequestParam("currentPassword") @NotBlank String currentPassword,
+            @RequestParam("newPassword") @NotBlank String newPassword,
+            @RequestParam("confirmPassword") @NotBlank String confirmPassword,
             @AuthenticationPrincipal UserDetails userDetails,
             RedirectAttributes redirectAttributes) {
 
+        // Validate password match first
         if (!newPassword.equals(confirmPassword)) {
             redirectAttributes.addFlashAttribute("error", "New passwords do not match");
             return "redirect:/user/profile";
         }
 
-        if (!isValidPassword(newPassword)) {
-            redirectAttributes.addFlashAttribute("error",
-                    "Password must be at least 6 characters with one uppercase, one lowercase letter and one number");
-            return "redirect:/user/profile";
-        }
-
         try {
-            boolean passwordChanged = userService.changePassword(
+            userService.changePassword(
                     userDetails.getUsername(),
                     currentPassword,
                     newPassword
             );
-            if (passwordChanged) {
-                redirectAttributes.addFlashAttribute("success", "Password changed successfully");
-            } else {
-                redirectAttributes.addFlashAttribute("error", "Current password is incorrect");
-            }
+            redirectAttributes.addFlashAttribute("success", "Password changed successfully");
+        } catch (PasswordMismatchException e) {
+            redirectAttributes.addFlashAttribute("error", "Current password is incorrect");
+        } catch (WeakPasswordException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
         } catch (Exception e) {
-            logger.error("Error changing password: {}", e.getMessage());
+            logger.error("Password change failed for user: {}", userDetails.getUsername(), e);
             redirectAttributes.addFlashAttribute("error", "Failed to change password");
         }
 
         return "redirect:/user/profile";
     }
+
 
     @PostMapping("/profile/delete")
     public String deleteAccount(
