@@ -132,6 +132,25 @@
       color: var(--danger-color);
     }
 
+    /* Validation styles */
+    .was-validated .form-control:valid {
+      border-color: #28a745;
+      padding-right: calc(1.5em + 0.75rem);
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3e%3cpath fill='%2328a745' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right calc(0.375em + 0.1875rem) center;
+      background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+    }
+
+    .was-validated .form-control:invalid {
+      border-color: #dc3545;
+      padding-right: calc(1.5em + 0.75rem);
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23dc3545' viewBox='0 0 12 12'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right calc(0.375em + 0.1875rem) center;
+      background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+    }
+
     @media (max-width: 768px) {
       .sidebar {
         min-height: auto;
@@ -209,6 +228,7 @@
         </div>
         <div class="p-3">
           <form th:action="@{/auth/logout}" method="post">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
             <button class="btn btn-outline-light w-100" type="submit">
               <i class="fas fa-sign-out-alt me-1"></i> Logout
             </button>
@@ -232,6 +252,16 @@
         </div>
       </div>
 
+      <!-- Success/Error Messages -->
+      <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <span th:text="${success}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+      <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+
       <!-- Profile Card -->
       <div class="card mb-4">
         <div class="profile-header"></div>
@@ -253,25 +283,59 @@
               <strong>Account Information</strong>
             </div>
             <div class="card-body">
-              <form th:action="@{/user/profile/update}" method="post">
+              <form th:action="@{/user/profile/update}" method="post" th:object="${user}" class="needs-validation" novalidate>
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+
+                <!-- Username (readonly) -->
                 <div class="mb-3">
-                  <label for="username" class="form-label">Username</label>
-                  <input type="text" class="form-control" id="username" th:value="${user.username}" readonly>
+                  <label for="profileUsername" class="form-label">Username</label>
+                  <input type="text" class="form-control" id="profileUsername"
+                         th:field="*{username}" readonly>
                 </div>
+
+                <!-- Email -->
                 <div class="mb-3">
-                  <label for="email" class="form-label">Email Address</label>
-                  <input type="email" class="form-control" id="email" th:value="${user.email}" required>
+                  <label for="profileEmail" class="form-label">Email Address</label>
+                  <input type="email" class="form-control" id="profileEmail"
+                         th:field="*{email}" required
+                         pattern="^[a-zA-Z0-9_+&*-]+(?:\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,7}$">
+                  <div class="invalid-feedback">
+                    Please provide a valid email address.
+                  </div>
                 </div>
+
+                <!-- First Name -->
                 <div class="row">
                   <div class="col-md-6 mb-3">
-                    <label for="firstName" class="form-label">First Name</label>
-                    <input type="text" class="form-control" id="firstName" th:value="${user.firstName}" required>
+                    <label for="profileFirstName" class="form-label">First Name</label>
+                    <input type="text" class="form-control" id="profileFirstName"
+                           th:field="*{firstName}" required>
+                    <div class="invalid-feedback">
+                      First name is required.
+                    </div>
                   </div>
+
+                  <!-- Last Name -->
                   <div class="col-md-6 mb-3">
-                    <label for="lastName" class="form-label">Last Name</label>
-                    <input type="text" class="form-control" id="lastName" th:value="${user.lastName}" required>
+                    <label for="profileLastName" class="form-label">Last Name</label>
+                    <input type="text" class="form-control" id="profileLastName"
+                           th:field="*{lastName}" required>
+                    <div class="invalid-feedback">
+                      Last name is required.
+                    </div>
                   </div>
                 </div>
+
+                <!-- Current Password for Verification -->
+                <div class="mb-3">
+                  <label for="profileCurrentPassword" class="form-label">Current Password (for verification)</label>
+                  <input type="password" class="form-control" id="profileCurrentPassword"
+                         name="currentPassword" required>
+                  <div class="invalid-feedback">
+                    Please provide your current password to save changes.
+                  </div>
+                </div>
+
                 <div class="d-flex justify-content-end">
                   <button type="submit" class="btn btn-primary px-4">
                     <i class="fas fa-save me-1"></i> Save Changes
@@ -290,27 +354,36 @@
               <strong>Security Settings</strong>
             </div>
             <div class="card-body">
-              <form th:action="@{/user/profile/change-password}" method="post">
-                <!-- Add CSRF token -->
+              <form th:action="@{/user/profile/change-password}" method="post" class="needs-validation" novalidate>
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
 
                 <div class="mb-3">
-                  <label for="currentPassword" class="form-label">Current Password</label>
-                  <input type="password" class="form-control" id="currentPassword"
+                  <label for="securityCurrentPassword" class="form-label">Current Password</label>
+                  <input type="password" class="form-control" id="securityCurrentPassword"
                          name="currentPassword" required>
+                  <div class="invalid-feedback">
+                    Please provide your current password.
+                  </div>
                 </div>
                 <div class="mb-3">
                   <label for="newPassword" class="form-label">New Password</label>
                   <input type="password" class="form-control" id="newPassword"
-                         name="newPassword" required>
+                         name="newPassword" required
+                         pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$">
                   <div class="form-text">
                     Password must be at least 6 characters with one uppercase, one lowercase letter and one number
                   </div>
+                  <div class="invalid-feedback">
+                    Password must meet complexity requirements.
+                  </div>
                 </div>
                 <div class="mb-3">
-                  <label for="confirmPassword" class="form-label">Confirm New Password</label>
-                  <input type="password" class="form-control" id="confirmPassword"
+                  <label for="confirmNewPassword" class="form-label">Confirm New Password</label>
+                  <input type="password" class="form-control" id="confirmNewPassword"
                          name="confirmPassword" required>
+                  <div class="invalid-feedback">
+                    Passwords must match.
+                  </div>
                 </div>
                 <div class="d-flex justify-content-end">
                   <button type="submit" class="btn btn-primary px-4">
@@ -319,7 +392,6 @@
                 </div>
               </form>
               <hr class="my-4">
-              <h5 class="mb-3">&nbsp; </h5>
 </div>
           </div>
         </div>
@@ -389,16 +461,24 @@
           </ul>
           <p>will be permanently deleted.</p>
         </div>
-        <form th:action="@{/user/profile/delete}" method="post">
+        <form th:action="@{/user/profile/delete}" method="post" class="needs-validation" novalidate>
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
           <div class="mb-3">
-            <label for="deletePassword" class="form-label">Enter your password to confirm</label>
-            <input type="password" class="form-control" id="deletePassword" required>
+            <label for="deleteAccountPassword" class="form-label">Enter your password to confirm</label>
+            <input type="password" class="form-control" id="deleteAccountPassword"
+                   name="deletePassword" required>
+            <div class="invalid-feedback">
+              Please provide your password.
+            </div>
           </div>
           <div class="form-check mb-3">
             <input class="form-check-input" type="checkbox" id="confirmDelete" required>
             <label class="form-check-label" for="confirmDelete">
               I understand this action is irreversible
             </label>
+            <div class="invalid-feedback">
+              You must confirm this action.
+            </div>
           </div>
           <div class="d-flex justify-content-end">
             <button type="button" class="btn btn-outline-secondary me-3" data-bs-dismiss="modal">
@@ -424,6 +504,45 @@
     tooltipTriggerList.map(function (tooltipTriggerEl) {
       return new bootstrap.Tooltip(tooltipTriggerEl);
     });
+
+    // Enable Bootstrap validation
+    const forms = document.querySelectorAll('.needs-validation');
+
+    Array.from(forms).forEach(form => {
+      form.addEventListener('submit', function(event) {
+        if (!form.checkValidity()) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+
+        form.classList.add('was-validated');
+      }, false);
+    });
+
+    // Password match validation for password change form
+    const newPassword = document.getElementById('newPassword');
+    const confirmNewPassword = document.getElementById('confirmNewPassword');
+
+    if (newPassword && confirmNewPassword) {
+      confirmNewPassword.addEventListener('input', function() {
+        if (newPassword.value !== confirmNewPassword.value) {
+          confirmNewPassword.setCustomValidity("Passwords must match");
+        } else {
+          confirmNewPassword.setCustomValidity("");
+        }
+      });
+    }
+
+    // Delete account confirmation validation
+    const confirmDeleteCheckbox = document.getElementById('confirmDelete');
+    if (confirmDeleteCheckbox) {
+      confirmDeleteCheckbox.addEventListener('change', function() {
+        const deleteForm = this.closest('form');
+        if (deleteForm) {
+          deleteForm.classList.remove('was-validated');
+        }
+      });
+    }
   });
 </script>
 </body>
