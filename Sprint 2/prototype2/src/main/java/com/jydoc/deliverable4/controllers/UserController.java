@@ -119,18 +119,15 @@ public class UserController {
             redirectAttributes.addFlashAttribute("error", "New passwords do not match");
             return "redirect:/user/profile";
         }
-
         try {
             boolean success = userService.changePassword(
                     userDetails.getUsername(),
                     currentPassword,
                     newPassword
             );
-
             if (!success) {
                 throw new PasswordMismatchException("Current password is incorrect");
             }
-
             redirectAttributes.addFlashAttribute("success", "Password changed successfully");
         } catch (PasswordMismatchException e) {
             redirectAttributes.addFlashAttribute("error", "Current password is incorrect");
@@ -140,7 +137,6 @@ public class UserController {
             logger.error("Password change failed for user: {}", userDetails.getUsername(), e);
             redirectAttributes.addFlashAttribute("error", "Failed to change password");
         }
-
         return "redirect:/user/profile";
     }
 
