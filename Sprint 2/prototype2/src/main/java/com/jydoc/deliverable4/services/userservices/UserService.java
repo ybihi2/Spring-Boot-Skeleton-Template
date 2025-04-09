@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -58,6 +59,12 @@ public class UserService {
         return userRepository.findAll();
     }
 
+    @Transactional(readOnly = true)
+    public boolean verifyCurrentPassword(String username, String currentPassword) {
+        UserModel user = findByUsername(username);
+        return passwordEncoder.matches(currentPassword, user.getPassword());
+    }
+
     /* ====================== User Status Methods ====================== */
 
     @Transactional(readOnly = true)
@@ -100,16 +107,26 @@ public class UserService {
 
 
     @Transactional
-    public void updateUserProfile(String username, UserDTO userDTO) {
+    public UserDTO updateUserProfile(String username, UserDTO userDTO) {
+        Objects.requireNonNull(userDTO, "UserDTO cannot be null");
+
         UserModel user = findByUsername(username);
 
-        // Update only the fields we allow to be modified
-        user.setFirstName(userDTO.getFirstName());
-        user.setLastName(userDTO.getLastName());
-        user.setEmail(userDTO.getEmail());
+        // Verify email uniqueness if changing email
+        if (!user.getEmail().equalsIgnoreCase(userDTO.getEmail())) {
+            if (userRepository.existsByEmail(userDTO.getEmail())) {
+                throw new IllegalArgumentException("Email already in use");
+            }
+        }
 
-        userRepository.save(user);
-        logger.debug("Updated profile for user: {}", username);
+        // Update allowed fields
+        user.setFirstName(userDTO.getFirstName().trim());
+        user.setLastName(userDTO.getLastName().trim());
+        user.setEmail(userDTO.getEmail().trim().toLowerCase());
+
+        UserModel updatedUser = userRepository.save(user);
+        logger.info("Updated profile for user: {}", username);
+        return convertToDTO(updatedUser);
     }
 
 

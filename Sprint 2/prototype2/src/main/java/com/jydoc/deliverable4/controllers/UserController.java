@@ -27,12 +27,9 @@ public class UserController {
 
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
-    private static final String PASSWORD_PATTERN =
-            "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{6,}$";
-
     private final DashboardService dashboardService;
     private final MedicationService medicationService;
-    private final UserService userService;  // Added UserService
+    private final UserService userService;
 
     public UserController(DashboardService dashboardService,
                           MedicationService medicationService,
@@ -43,7 +40,6 @@ public class UserController {
         logger.info("UserController initialized");
     }
 
-    // Existing Endpoints (unchanged)
     @GetMapping("/dashboard")
     public String showDashboard(@AuthenticationPrincipal UserDetails userDetails, Model model) {
         logger.debug("Loading dashboard for user: {}", userDetails.getUsername());
@@ -53,7 +49,6 @@ public class UserController {
         return "user/dashboard";
     }
 
-    // Modified Profile Endpoints
     @GetMapping("/profile")
     public String showProfile(@AuthenticationPrincipal UserDetails userDetails, Model model) {
         logger.debug("Loading profile for user: {}", userDetails.getUsername());
@@ -62,12 +57,25 @@ public class UserController {
         return "user/profile";
     }
 
+    //TODO: Password is exposed in client payload
     @PostMapping("/profile/update")
     public String updateProfile(
-            @Valid @ModelAttribute("user") UserDTO userDTO,
+            @ModelAttribute("user") UserDTO userDTO,
             BindingResult result,
+            @RequestParam("currentPassword") String currentPassword,
             @AuthenticationPrincipal UserDetails userDetails,
             RedirectAttributes redirectAttributes) {
+
+        // Manually validate only the fields we want to update
+        if (userDTO.getEmail() == null || userDTO.getEmail().trim().isEmpty()) {
+            result.rejectValue("email", "NotBlank", "Email is required");
+        }
+        if (userDTO.getFirstName() == null || userDTO.getFirstName().trim().isEmpty()) {
+            result.rejectValue("firstName", "NotBlank", "First name is required");
+        }
+        if (userDTO.getLastName() == null || userDTO.getLastName().trim().isEmpty()) {
+            result.rejectValue("lastName", "NotBlank", "Last name is required");
+        }
 
         if (result.hasErrors()) {
             logger.warn("Validation errors in profile update: {}", result.getAllErrors());
@@ -75,7 +83,20 @@ public class UserController {
         }
 
         try {
-            userService.updateUserProfile(userDetails.getUsername(), userDTO);
+            // Verify current password first
+            if (!userService.verifyCurrentPassword(userDetails.getUsername(), currentPassword)) {
+                redirectAttributes.addFlashAttribute("error", "Current password is incorrect");
+                return "redirect:/user/profile";
+            }
+
+            // Create a clean DTO with only updatable fields
+            UserDTO updateDto = new UserDTO();
+            updateDto.setEmail(userDTO.getEmail());
+            updateDto.setFirstName(userDTO.getFirstName());
+            updateDto.setLastName(userDTO.getLastName());
+
+            // Update profile if password is correct
+            userService.updateUserProfile(userDetails.getUsername(), updateDto);
             redirectAttributes.addFlashAttribute("success", "Profile updated successfully");
         } catch (Exception e) {
             logger.error("Error updating profile: {}", e.getMessage());
@@ -100,15 +121,20 @@ public class UserController {
         }
 
         try {
-            userService.changePassword(
+            boolean success = userService.changePassword(
                     userDetails.getUsername(),
                     currentPassword,
                     newPassword
             );
+
+            if (!success) {
+                throw new PasswordMismatchException("Current password is incorrect");
+            }
+
             redirectAttributes.addFlashAttribute("success", "Password changed successfully");
         } catch (PasswordMismatchException e) {
             redirectAttributes.addFlashAttribute("error", "Current password is incorrect");
-        } catch (WeakPasswordException e) {
+        } catch (IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         } catch (Exception e) {
             logger.error("Password change failed for user: {}", userDetails.getUsername(), e);
@@ -117,7 +143,6 @@ public class UserController {
 
         return "redirect:/user/profile";
     }
-
 
     @PostMapping("/profile/delete")
     public String deleteAccount(
@@ -145,7 +170,6 @@ public class UserController {
         return "redirect:/user/profile";
     }
 
-    // Existing Medication Endpoints (unchanged)
     @GetMapping("/medication")
     public String showMedications(@AuthenticationPrincipal UserDetails userDetails, Model model) {
         logger.debug("Loading medications for user: {}", userDetails.getUsername());
@@ -222,7 +246,6 @@ public class UserController {
         }
     }
 
-    // Existing Schedule and Refills Endpoints (unchanged)
     @GetMapping("/refills")
     public String showRefills(@AuthenticationPrincipal UserDetails userDetails, Model model) {
         model.addAttribute("refills",
@@ -233,22 +256,5 @@ public class UserController {
     @GetMapping("/health")
     public String showHealthMetrics() {
         return "user/health";
-    }
-
-    // Helper method for password validation
-    private boolean isValidPassword(String password) {
-        if (password.length() < 6) return false;
-
-        boolean hasUppercase = false;
-        boolean hasLowercase = false;
-        boolean hasNumber = false;
-
-        for (char c : password.toCharArray()) {
-            if (Character.isUpperCase(c)) hasUppercase = true;
-            if (Character.isLowerCase(c)) hasLowercase = true;
-            if (Character.isDigit(c)) hasNumber = true;
-        }
-
-        return hasUppercase && hasLowercase && hasNumber;
     }
 }
