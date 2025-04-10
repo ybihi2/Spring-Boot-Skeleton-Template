@@ -9,9 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalTime;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -192,13 +190,16 @@ public class MedicationModel {
      */
     public MedicationDTO toDto() {
         logger.debug("Converting MedicationModel to DTO for medication ID: {}", id);
+        Set<LocalTime> intakeTimesSet = this.getIntakeTimesAsLocalTimes();
+        List<LocalTime> intakeTimes = intakeTimesSet != null ? new ArrayList<>(intakeTimesSet) : new ArrayList<>();
+
         return MedicationDTO.builder()
                 .id(this.id)
                 .userId(this.user.getId())
                 .medicationName(this.name)
                 .urgency(this.urgency != null ?
                         MedicationDTO.MedicationUrgency.valueOf(this.urgency.name()) : null)
-                .intakeTimes(this.getIntakeTimesAsLocalTimes())
+                .intakeTimes(intakeTimes)
                 .daysOfWeek(this.daysOfWeek.stream()
                         .map(day -> MedicationDTO.DayOfWeek.valueOf(day.name()))
                         .collect(Collectors.toSet()))
@@ -227,4 +228,10 @@ public class MedicationModel {
                     it.getIntakeTime(), id);
         });
     }
+
+
+    public void clearDays() {
+        this.daysOfWeek.clear();
+    }
+
 }

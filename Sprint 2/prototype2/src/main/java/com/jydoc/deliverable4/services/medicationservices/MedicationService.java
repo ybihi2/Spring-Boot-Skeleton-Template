@@ -20,6 +20,10 @@ import java.util.Set;
 @Service
 public interface MedicationService {
 
+    MedicationDTO getMedicationById(Long id, String username); // New method
+
+
+
     /**
      * Retrieves all medications associated with a specific user.
      *

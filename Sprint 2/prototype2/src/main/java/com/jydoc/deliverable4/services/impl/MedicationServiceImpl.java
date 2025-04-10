@@ -70,13 +70,6 @@ public class MedicationServiceImpl implements MedicationService {
         }
     }
 
-    /**
-     * Retrieves a single medication by its ID.
-     *
-     * @param id The ID of the medication to retrieve
-     * @return MedicationDTO representing the requested medication
-     * @throws MedicationNotFoundException if no medication exists with the specified ID
-     */
     @Override
     @Transactional(readOnly = true)
     public MedicationDTO getMedicationById(Long id) {
@@ -94,6 +87,34 @@ public class MedicationServiceImpl implements MedicationService {
             return result;
         } catch (Exception e) {
             logOperationError("fetching medication by ID", id.toString(), e);
+            throw e;
+        }
+    }
+
+    /**
+     * Retrieves a single medication by its ID.
+     *
+     * @param id The ID of the medication to retrieve
+     * @return MedicationDTO representing the requested medication
+     * @throws MedicationNotFoundException if no medication exists with the specified ID
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public MedicationDTO getMedicationById(Long id, String username) {
+        logger.debug("Fetching medication by ID: {} for user: {}", id, username);
+
+        try {
+            MedicationModel medication = medicationRepository.findByIdAndUserUsername(id, username)
+                    .orElseThrow(() -> {
+                        logger.error("Medication not found with ID: {} for user: {}", id, username);
+                        return new MedicationNotFoundException("Medication not found with ID: " + id + " for user: " + username);
+                    });
+
+            MedicationDTO result = convertToDto(medication);
+            logger.info("Successfully retrieved medication ID: {} for user: {}", id, username);
+            return result;
+        } catch (Exception e) {
+            logOperationError("fetching medication by ID for user", id + " for " + username, e);
             throw e;
         }
     }
@@ -193,6 +214,16 @@ public class MedicationServiceImpl implements MedicationService {
     @Override
     @Transactional
     public MedicationDTO updateMedication(Long id, MedicationDTO medicationDTO) {
+        // First validate the input parameters
+        if (id == null) {
+            logger.error("Attempted to update medication with null ID");
+            throw new IllegalArgumentException("Medication ID cannot be null");
+        }
+        if (medicationDTO == null) {
+            logger.error("Attempted to update with null medication DTO");
+            throw new IllegalArgumentException("MedicationDTO cannot be null");
+        }
+
         logger.info("Updating medication ID: {}", id);
         long startTime = System.currentTimeMillis();
 
@@ -205,13 +236,18 @@ public class MedicationServiceImpl implements MedicationService {
                 updateIntakeTimes(existing, medicationDTO.getIntakeTimes());
             }
 
+            if (medicationDTO.getDaysOfWeek() != null) {
+                logger.debug("Processing {} days for update", medicationDTO.getDaysOfWeek().size());
+                processDaysOfWeek(medicationDTO, existing);
+            }
+
             MedicationModel updatedMedication = medicationRepository.save(existing);
             MedicationDTO result = convertToDto(updatedMedication);
 
             logOperationSuccess("updated", id, "medication", startTime);
             return result;
         } catch (Exception e) {
-            logOperationError("updating medication", id.toString(), e);
+            logOperationError("updating medication", String.valueOf(id), e);  // Safe null handling
             throw new RuntimeException("Failed to update medication", e);
         }
     }
@@ -389,7 +425,7 @@ public class MedicationServiceImpl implements MedicationService {
                 .dosage(medicationDTO.getDosage())
                 .instructions(medicationDTO.getInstructions())
                 .intakeTimes(medicationDTO.getIntakeTimes() != null ?
-                        new HashSet<>(medicationDTO.getIntakeTimes()) : new HashSet<>())
+                        new ArrayList<>(medicationDTO.getIntakeTimes()) : new ArrayList<>())
                 .daysOfWeek(medicationDTO.getDaysOfWeek() != null ?
                         new HashSet<>(medicationDTO.getDaysOfWeek()) : new HashSet<>())
                 .active(medicationDTO.getActive() != null ?
@@ -547,21 +583,14 @@ public class MedicationServiceImpl implements MedicationService {
      * @param medication The medication to update
      * @param newIntakeTimes The new intake times to set
      */
-    private void updateIntakeTimes(MedicationModel medication, Set<LocalTime> newIntakeTimes) {
+    private void updateIntakeTimes(MedicationModel medication, List<LocalTime> newIntakeTimes) {
         Set<LocalTime> currentTimes = medication.getIntakeTimesAsLocalTimes();
-
-        // Remove times that are no longer present
         currentTimes.stream()
                 .filter(time -> !newIntakeTimes.contains(time))
                 .forEach(medication::removeIntakeTime);
-
-        // Add new times that aren't already present
         newIntakeTimes.stream()
                 .filter(time -> !currentTimes.contains(time))
                 .forEach(medication::addIntakeTime);
-
-        logger.trace("Intake times updated for medication ID: {}. Total times now: {}",
-                medication.getId(), medication.getIntakeTimes().size());
     }
 
     /**
@@ -592,6 +621,12 @@ public class MedicationServiceImpl implements MedicationService {
 
         medication.setDosage(dto.getDosage());
         medication.setInstructions(dto.getInstructions());
+
+        if (dto.getDaysOfWeek() != null) {
+            processDaysOfWeek(dto, medication);
+        }
+
+
     }
 
     /**
@@ -601,39 +636,22 @@ public class MedicationServiceImpl implements MedicationService {
      * @return MedicationDTO
      */
     private MedicationDTO convertToDto(MedicationModel medication) {
-        if (medication == null) {
-            logger.warn("Attempted to convert null MedicationModel to DTO");
-            return null;
-        }
-
-        logger.trace("Converting medication ID {} to DTO", medication.getId());
-        Set<LocalTime> intakeTimes = medication.getIntakeTimesAsLocalTimes();
-
-        try {
-            // Convert days of week if they exist
-            Set<MedicationDTO.DayOfWeek> daysOfWeek = null;
-            if (medication.getDaysOfWeek() != null && !medication.getDaysOfWeek().isEmpty()) {
-                daysOfWeek = medication.getDaysOfWeek().stream()
-                        .map(day -> MedicationDTO.DayOfWeek.valueOf(day.name()))
-                        .collect(Collectors.toSet());
-            }
-
-            return MedicationDTO.builder()
-                    .id(medication.getId())
-                    .userId(medication.getUser() != null ? medication.getUser().getId() : null)
-                    .medicationName(medication.getName())
-                    .urgency(medication.getUrgency() != null ?
-                            MedicationDTO.MedicationUrgency.valueOf(medication.getUrgency().name()) : null)
-                    .dosage(medication.getDosage())
-                    .instructions(medication.getInstructions())
-                    .intakeTimes(intakeTimes)
-                    .daysOfWeek(daysOfWeek)  // Add this line
-                    .build();
-        } catch (IllegalArgumentException e) {
-            logger.error("Failed to convert urgency {} to DTO enum for medication ID: {}",
-                    medication.getUrgency(), medication.getId(), e);
-            throw new RuntimeException("Invalid urgency value during DTO conversion", e);
-        }
+        Set<LocalTime> intakeTimesSet = medication.getIntakeTimesAsLocalTimes();
+        List<LocalTime> intakeTimes = intakeTimesSet != null ? new ArrayList<>(intakeTimesSet) : new ArrayList<>();
+        return MedicationDTO.builder()
+                .id(medication.getId()) // Sets id from entity
+                .userId(medication.getUser() != null ? medication.getUser().getId() : null)
+                .medicationName(medication.getName())
+                .urgency(medication.getUrgency() != null ?
+                        MedicationDTO.MedicationUrgency.valueOf(medication.getUrgency().name()) : null)
+                .dosage(medication.getDosage())
+                .instructions(medication.getInstructions())
+                .intakeTimes(intakeTimes)
+                .daysOfWeek(medication.getDaysOfWeek() != null && !medication.getDaysOfWeek().isEmpty() ?
+                        medication.getDaysOfWeek().stream()
+                                .map(day -> MedicationDTO.DayOfWeek.valueOf(day.name()))
+                                .collect(Collectors.toSet()) : null)
+                .build();
     }
 
     /**
@@ -716,8 +734,20 @@ public class MedicationServiceImpl implements MedicationService {
 
 
     private void processDaysOfWeek(MedicationDTO medicationDTO, MedicationModel medication) {
-        medicationDTO.getDaysOfWeek().forEach(day ->
-                medication.addDay(MedicationModel.DayOfWeek.valueOf(day.name())));
+        if (medicationDTO.getDaysOfWeek() == null || medicationDTO.getDaysOfWeek().isEmpty()) {
+            logger.warn("No days selected for medication ID: {}", medication.getId());
+            medication.clearDays();
+            return;
+        }
+
+        medication.clearDays();
+        medicationDTO.getDaysOfWeek().forEach(day -> {
+            try {
+                medication.addDay(MedicationModel.DayOfWeek.valueOf(day.name()));
+            } catch (IllegalArgumentException e) {
+                logger.error("Invalid day value: {}", day);
+            }
+        });
     }
 
 }

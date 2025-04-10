@@ -21,6 +21,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import javax.validation.Valid;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Controller handling all user-related operations including profile management,
@@ -299,7 +301,6 @@ public class UserController {
         try {
             model.addAttribute("medications",
                     medicationService.getUserMedications(userDetails.getUsername()));
-            // Add the username to the model
             model.addAttribute("username", userDetails.getUsername());
             logger.info("Medications loaded successfully for user: {}", userDetails.getUsername());
             return "user/medication/list";
@@ -324,7 +325,6 @@ public class UserController {
         try {
             model.addAttribute("medications",
                     medicationService.getUserMedications(userDetails.getUsername()));
-            // Add the username to the model
             model.addAttribute("username", userDetails.getUsername());
             return "user/medication/list";
         } catch (Exception e) {
@@ -401,57 +401,96 @@ public class UserController {
     }
 
     /**
-     * Displays the form for editing existing medications.
+     * Displays the form for editing an existing medication.
      *
      * @param id ID of the medication to edit
+     * @param userDetails Authenticated user details
      * @param model Spring MVC model for view data
-     * @return The edit medication form view
+     * @return The edit medication form view or redirect on failure
      */
     @GetMapping("/medication/{id}/edit")
-    public String showEditMedicationForm(@PathVariable Long id, Model model) {
-        logger.debug("Displaying edit form for medication ID: {}", id);
+    public String showEditMedicationForm(@PathVariable Long id,
+                                         @AuthenticationPrincipal UserDetails userDetails,
+                                         Model model) {
+        if (userDetails == null || userDetails.getUsername() == null) {
+            logger.error("Unauthenticated access attempt to edit medication");
+            return "redirect:/login";
+        }
+
+
+        String username = userDetails.getUsername();
+        logger.debug("Displaying edit form for medication ID: {} for user: {}", id, username);
+
         try {
-            MedicationDTO medicationDTO = medicationService.getMedicationById(id);
-            model.addAttribute("medicationDTO", medicationDTO);
+            // Validate path variable id
+            if (id == null) {
+                logger.error("Invalid medication ID (null) for user: {}", username);
+                return "redirect:/user/medication?error";
+            }
+
+            // Use the correct service method with username
+            MedicationDTO medication = medicationService.getMedicationById(id, username);
+            if (medication == null || medication.getId() == null) {
+                logger.warn("Medication with ID: {} not found or invalid for user: {}", id, username);
+                return "redirect:/user/medication?error";
+            }
+
+            // Debug the loaded DTO
+            logger.debug("Loaded MedicationDTO: {}", medication);
+
+            model.addAttribute("medication", medication);
+            model.addAttribute("username", username);
+            logger.info("Edit form loaded successfully for medication ID: {} for user: {}", id, username);
             return "user/medication/edit";
         } catch (Exception e) {
-            logger.error("Failed to load medication for editing (ID: {}): {}", id, e.getMessage(), e);
-            model.addAttribute("error", "Failed to load medication data");
-            return "user/medication/edit";
+            logger.error("Failed to load medication for editing (ID: {}) for user {}: {}",
+                    id, username, e.getMessage(), e);
+            return "redirect:/user/medication?error";
         }
     }
 
     /**
      * Handles submission of updated medication information.
      *
-     * @param id ID of the medication being updated
      * @param medicationDTO Updated medication details
      * @param result Binding result for validation errors
-     * @param model Spring MVC model for view data
+     * @param userDetails Authenticated user details
+     * @param redirectAttributes Attributes for redirect scenarios
      * @return Redirect to medication list on success, form view on failure
      */
-    @PostMapping("/medication/{id}")
+    @PostMapping("/medication/edit")
     public String updateMedication(
-            @PathVariable Long id,
-            @Valid @ModelAttribute("medicationDTO") MedicationDTO medicationDTO,
+            @Valid @ModelAttribute("medication") MedicationDTO medicationDTO,
             BindingResult result,
-            Model model) {
+            @AuthenticationPrincipal UserDetails userDetails,
+            RedirectAttributes redirectAttributes) {
 
-        logger.info("Attempting to update medication ID: {}", id);
+        logger.debug("Received daysOfWeek: {}", medicationDTO.getDaysOfWeek());
+        // Rest of your method
 
-        if (result.hasErrors()) {
-            logger.warn("Medication update validation failed with {} errors for ID: {}",
-                    result.getErrorCount(), id);
-            return "user/medication/edit";
+        // Add validation
+        if (medicationDTO.getId() == null) {
+            logger.error("Null medication ID for user: {}", userDetails.getUsername());
+            redirectAttributes.addFlashAttribute("error", "Medication ID is required");
+            return "redirect:/user/medication";
+        }
+
+        // Validate intake times
+        if (medicationDTO.getIntakeTimes() != null) {
+            medicationDTO.setIntakeTimes(
+                    medicationDTO.getIntakeTimes().stream()
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toList())
+            );
         }
 
         try {
-            medicationService.updateMedication(id, medicationDTO);
-            logger.info("Medication updated successfully (ID: {})", id);
-            return "redirect:/user/medication?updated";
+            medicationService.updateMedication(medicationDTO.getId(), medicationDTO);
+            redirectAttributes.addFlashAttribute("success", "Medication updated");
+            return "redirect:/user/medication";
         } catch (Exception e) {
-            logger.error("Failed to update medication (ID: {}): {}", id, e.getMessage(), e);
-            model.addAttribute("error", "Error updating medication: " + e.getMessage());
+            logger.error("Update failed for med {}: {}", medicationDTO.getId(), e.getMessage());
+            redirectAttributes.addFlashAttribute("error", "Update failed");
             return "user/medication/edit";
         }
     }
@@ -535,10 +574,10 @@ public class UserController {
 
             // Add current month, year, and day
             LocalDate currentDate = LocalDate.now(); // April 10, 2025, based on your date
-            model.addAttribute("currentMonth", currentDate.getMonth().toString()); // e.g., "APRIL"
-            model.addAttribute("currentMonthNumber", currentDate.getMonthValue()); // e.g., 4
-            model.addAttribute("currentYear", currentDate.getYear()); // e.g., 2025
-            model.addAttribute("currentDay", currentDate.getDayOfMonth()); // e.g., 10
+            model.addAttribute("currentMonth", currentDate.getMonth().toString());
+            model.addAttribute("currentMonthNumber", currentDate.getMonthValue());
+            model.addAttribute("currentYear", currentDate.getYear());
+            model.addAttribute("currentDay", currentDate.getDayOfMonth());
 
             logger.info("Medication schedule loaded successfully for user: {}", username);
             return "user/schedule";

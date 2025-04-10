@@ -5,6 +5,8 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -64,8 +66,9 @@ public class MedicationDTO {
      * Set of times when the medication should be taken.
      * Must not be null, but can be empty for PRN medications.
      */
+    @Builder.Default
     @NotNull(message = "Intake times must be specified")
-    private Set<LocalTime> intakeTimes;
+    private List<LocalTime> intakeTimes = new ArrayList<>();
 
     /**
      * Days of the week when the medication should be taken.
