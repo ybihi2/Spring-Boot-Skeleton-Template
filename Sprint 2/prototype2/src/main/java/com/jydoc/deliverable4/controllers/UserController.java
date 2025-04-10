@@ -330,9 +330,10 @@ public class UserController {
      * @return The add medication form view
      */
     @GetMapping("/medication/add")
-    public String showAddMedicationForm(Model model) {
+    public String showAddMedicationForm(@AuthenticationPrincipal UserDetails userDetails, Model model) {
         logger.debug("Displaying add medication form");
         model.addAttribute("medicationDTO", new MedicationDTO());
+        model.addAttribute("username", userDetails.getUsername());
         return "user/medication/add";
     }
 
