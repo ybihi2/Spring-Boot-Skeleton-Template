@@ -1,5 +1,6 @@
 package com.jydoc.deliverable4.model;
 
+import com.jydoc.deliverable4.model.auth.AuthorityModel;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Fetch;
@@ -201,4 +202,9 @@ public class UserModel {
         this.authorities.remove(authority);
         authority.getUsers().remove(this);
     }
+
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<MedicationModel> medications;
+
 }

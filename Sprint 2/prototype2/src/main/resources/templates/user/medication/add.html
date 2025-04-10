@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Medication - HealthTrack System</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --primary-color: #4e73df;
+            --success-color: #1cc88a;
+            --info-color: #36b9cc;
+            --warning-color: #f6c23e;
+            --danger-color: #e74a3b;
+            --dark-color: #5a5c69;
+        }
+
+        body {
+            background-color: #f8f9fc;
+            font-family: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .sidebar {
+            background: linear-gradient(180deg, var(--primary-color) 10%, #224abe 100%);
+            min-height: 100vh;
+        }
+
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 600;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.2rem;
+        }
+
+        .sidebar .nav-link:hover {
+            color: #fff;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar .nav-link i {
+            margin-right: 0.5rem;
+        }
+
+        .sidebar .nav-link.active {
+            color: #fff;
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .card {
+            border: none;
+            border-radius: 0.35rem;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            background-color: #f8f9fc;
+            border-bottom: 1px solid #e3e6f0;
+            padding: 1rem 1.35rem;
+            font-weight: 700;
+        }
+
+        .form-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            border-radius: 0.35rem;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+            background-color: white;
+        }
+
+        .time-tag {
+            display: inline-block;
+            margin: 0.3rem;
+            padding: 0.3rem 0.6rem;
+            background-color: #e9ecef;
+            border-radius: 20px;
+        }
+
+        .time-tag-remove {
+            cursor: pointer;
+            margin-left: 0.5rem;
+            color: var(--danger-color);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .btn-primary:hover {
+            background-color: #3a5bc7;
+            border-color: #3a5bc7;
+        }
+
+        .form-check-input:checked {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .urgent-radio {
+            color: var(--danger-color);
+        }
+
+        .nonurgent-radio {
+            color: var(--success-color);
+        }
+    </style>
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 sidebar text-white p-0">
+            <div class="d-flex flex-column h-100">
+                <div class="p-4">
+                    <h1 class="h5 mb-0">
+                        <i class="fas fa-heartbeat me-2"></i>HealthTrack
+                    </h1>
+                </div>
+                <hr class="my-0 bg-white-50">
+                <div class="flex-grow-1 p-3">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="me-3">
+                            <i class="fas fa-user-circle fa-2x"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold" th:text="${username}"></div>
+                            <small class="text-white-50">Patient</small>
+                        </div>
+                    </div>
+
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/user/profile}">
+                                <i class="fas fa-fw fa-user"></i>
+                                Profile
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/user/dashboard}">
+                                <i class="fas fa-fw fa-tachometer-alt"></i>
+                                Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/user/medication}">
+                                <i class="fas fa-fw fa-pills"></i>
+                                My Medications
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/user/medication/add}">
+                                <i class="fas fa-fw fa-plus-circle"></i>
+                                Add Medication
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/user/schedule}">
+                                <i class="fas fa-fw fa-calendar-alt"></i>
+                                Schedule
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/user/health}">
+                                <i class="fas fa-fw fa-heartbeat"></i>
+                                Health Metrics
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="p-3">
+                    <form th:action="@{/auth/logout}" method="post">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                        <button class="btn btn-outline-light w-100" type="submit">
+                            <i class="fas fa-sign-out-alt me-1"></i> Logout
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="col-md-9 col-lg-10 px-md-4 py-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">
+                    <i class="fas fa-pills me-2"></i>Add New Medication
+                </h1>
+                <div class="btn-toolbar mb-2 mb-md-0">
+                    <a th:href="@{/user/medication}" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> Back to Medications
+                    </a>
+                </div>
+            </div>
+
+            <div class="form-container">
+                <!-- Success/Error Messages -->
+                <div th:if="${param.success}" class="alert alert-success">
+                    <i class="fas fa-check-circle me-2"></i> Medication added successfully!
+                </div>
+                <div th:if="${param.error}" class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle me-2"></i> <span th:text="${error}">Error message</span>
+                </div>
+
+                <form th:action="@{/user/medication}" th:object="${medicationDTO}" method="post">
+                    <!-- Hidden user ID field -->
+                    <input type="hidden" name="userId" th:value="${#authentication.principal.userId}">
+
+                    <!-- Medication Name -->
+                    <div class="mb-4">
+                        <label for="medicationName" class="form-label fw-bold">
+                            <i class="fas fa-medkit me-1"></i> Medication Name
+                        </label>
+                        <input type="text" class="form-control" id="medicationName"
+                               th:field="*{medicationName}" required>
+                        <div th:if="${#fields.hasErrors('medicationName')}" class="invalid-feedback d-block">
+                            <i class="fas fa-exclamation-circle me-1"></i> <span th:errors="*{medicationName}">Validation error</span>
+                        </div>
+                    </div>
+
+                    <!-- Urgency Level -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-exclamation-triangle me-1"></i> Urgency Level
+                        </label>
+                        <div th:if="${#fields.hasErrors('urgency')}" class="invalid-feedback d-block">
+                            <i class="fas fa-exclamation-circle me-1"></i> <span th:errors="*{urgency}">Validation error</span>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" id="urgent"
+                                   th:field="*{urgency}" th:value="URGENT" required>
+                            <label class="form-check-label urgent-radio" for="urgent">
+                                <i class="fas fa-bell me-1"></i> Urgent
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" id="nonUrgent"
+                                   th:field="*{urgency}" th:value="NONURGENT">
+                            <label class="form-check-label nonurgent-radio" for="nonUrgent">
+                                <i class="fas fa-check-circle me-1"></i> Non-Urgent
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-calendar-day me-1"></i> Days to Take
+                        </label>
+                        <div th:if="${#fields.hasErrors('daysOfWeek')}" class="invalid-feedback d-block">
+                            <i class="fas fa-exclamation-circle me-1"></i>
+                            <span th:errors="*{daysOfWeek}">Validation error</span>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox"
+                                           th:field="*{daysOfWeek}"
+                                           th:value="MONDAY"
+                                           id="monday">
+                                    <label class="form-check-label" for="monday">Monday</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox"
+                                           th:field="*{daysOfWeek}"
+                                           th:value="TUESDAY"
+                                           id="tuesday">
+                                    <label class="form-check-label" for="tuesday">Tuesday</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox"
+                                           th:field="*{daysOfWeek}"
+                                           th:value="WEDNESDAY"
+                                           id="wednesday">
+                                    <label class="form-check-label" for="wednesday">Wednesday</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox"
+                                           th:field="*{daysOfWeek}"
+                                           th:value="THURSDAY"
+                                           id="thursday">
+                                    <label class="form-check-label" for="thursday">Thursday</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox"
+                                           th:field="*{daysOfWeek}"
+                                           th:value="FRIDAY"
+                                           id="friday">
+                                    <label class="form-check-label" for="friday">Friday</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox"
+                                           th:field="*{daysOfWeek}"
+                                           th:value="SATURDAY"
+                                           id="saturday">
+                                    <label class="form-check-label" for="saturday">Saturday</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox"
+                                           th:field="*{daysOfWeek}"
+                                           th:value="SUNDAY"
+                                           id="sunday">
+                                    <label class="form-check-label" for="sunday">Sunday</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox"
+                                           id="selectAllDays">
+                                    <label class="form-check-label" for="selectAllDays">Select All Days</label>
+                                </div>
+                            </div>
+                        </div>
+                        <small class="text-muted">Select all days when you need to take this medication</small>
+                    </div>
+
+                    <!-- Intake Times -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-clock me-1"></i> Intake Times
+                        </label>
+                        <div th:if="${#fields.hasErrors('intakeTimes')}" class="invalid-feedback d-block">
+                            <i class="fas fa-exclamation-circle me-1"></i> <span th:errors="*{intakeTimes}">Validation error</span>
+                        </div>
+                        <div class="input-group mb-2">
+                            <input type="time" class="form-control" id="timeInput">
+                            <button class="btn btn-primary" type="button" id="addTimeBtn">
+                                <i class="fas fa-plus me-1"></i> Add Time
+                            </button>
+                        </div>
+                        <div id="timeTagsContainer" class="mb-2">
+                            <!-- Time tags will be added here dynamically -->
+                        </div>
+                        <input type="hidden" id="intakeTimes" name="intakeTimes" th:field="*{intakeTimes}">
+                        <small class="text-muted">Add all times when you need to take this medication</small>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="d-flex justify-content-end mt-4">
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="fas fa-save me-1"></i> Save Medication
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:inline="javascript">
+    document.addEventListener('DOMContentLoaded', function() {
+        const timeInput = document.getElementById('timeInput');
+        const addTimeBtn = document.getElementById('addTimeBtn');
+        const timeTagsContainer = document.getElementById('timeTagsContainer');
+        const intakeTimesInput = document.getElementById('intakeTimes');
+        let intakeTimes = [];
+
+        // Load existing times from the model, with a fallback to empty array
+        const initialTimes = /*[[${medicationDTO.intakeTimes}]]*/ [];
+        intakeTimes = Array.isArray(initialTimes) ? [...initialTimes] : [];
+        intakeTimes.forEach(time => addTimeTag(time));
+
+        // Add time to the list
+        addTimeBtn.addEventListener('click', function() {
+            if (timeInput.value) {
+                addTimeTag(timeInput.value);
+                timeInput.value = '';
+                timeInput.focus();
+            }
+        });
+
+        // Handle Enter key in time input
+        timeInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (timeInput.value) {
+                    addTimeTag(timeInput.value);
+                    timeInput.value = '';
+                }
+            }
+        });
+
+        function addTimeTag(time) {
+            if (!intakeTimes.includes(time)) {
+                intakeTimes.push(time);
+                updateTimeTagsDisplay();
+                updateHiddenInput();
+            }
+        }
+
+        function removeTimeTag(time) {
+            intakeTimes = intakeTimes.filter(t => t !== time);
+            updateTimeTagsDisplay();
+            updateHiddenInput();
+        }
+
+        function updateTimeTagsDisplay() {
+            timeTagsContainer.innerHTML = '';
+            intakeTimes.forEach(time => {
+                const tag = document.createElement('span');
+                tag.className = 'time-tag';
+                tag.innerHTML = `
+                    ${formatTime(time)}
+                    <span class="time-tag-remove" onclick="removeTimeTag('${time}')">
+                        <i class="fas fa-times"></i>
+                    </span>
+                `;
+                timeTagsContainer.appendChild(tag);
+            });
+        }
+
+        function updateHiddenInput() {
+            intakeTimesInput.value = intakeTimes.join(',');
+        }
+
+        function formatTime(timeString) {
+            const [hours, minutes] = timeString.split(':');
+            let hour = parseInt(hours);
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            hour = hour % 12 || 12; // Simplified: 0 becomes 12
+            const paddedMinutes = minutes.padStart(2, '0');
+            return `${hour}:${paddedMinutes} ${ampm}`;
+        }
+
+        // Make removeTimeTag available globally
+        window.removeTimeTag = removeTimeTag;
+    });
+</script>
+</body>
+</html>

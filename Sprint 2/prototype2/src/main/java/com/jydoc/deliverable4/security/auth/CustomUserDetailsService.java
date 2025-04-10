@@ -1,9 +1,8 @@
 package com.jydoc.deliverable4.security.auth;
 
 import com.jydoc.deliverable4.model.UserModel;
-import com.jydoc.deliverable4.repositories.UserRepository;
+import com.jydoc.deliverable4.repositories.userrepositories.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -11,7 +10,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**

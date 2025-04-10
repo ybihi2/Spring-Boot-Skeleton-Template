@@ -1,8 +1,10 @@
 package com.jydoc.deliverable4.security.auth;
 
+import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.io.Serial;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Objects;
@@ -23,11 +25,18 @@ import java.util.Objects;
  * @since 1.0
  */
 public class CustomUserDetails implements UserDetails {
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**
      * The unique identifier of the user in the system
+     * -- GETTER --
+     *  Returns the unique identifier of the user.
+     *
+     * @return the user ID
+
      */
+    @Getter
     private final Long userId;
 
     /**
@@ -90,15 +99,6 @@ public class CustomUserDetails implements UserDetails {
         this.accountNonLocked = accountNonLocked;
         this.credentialsNonExpired = credentialsNonExpired;
         this.authorities = Objects.requireNonNull(authorities);
-    }
-
-    /**
-     * Returns the unique identifier of the user.
-     *
-     * @return the user ID
-     */
-    public Long getUserId() {
-        return userId;
     }
 
     /**
