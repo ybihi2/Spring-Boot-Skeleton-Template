@@ -65,19 +65,30 @@ public class UserController {
      */
     @GetMapping("/dashboard")
     public String showDashboard(@AuthenticationPrincipal UserDetails userDetails, Model model) {
-        logger.debug("Loading dashboard for user: {}", userDetails.getUsername());
+        if (userDetails == null || userDetails.getUsername() == null) {
+            logger.error("Unauthenticated access attempt to dashboard");
+            return "redirect:/login";
+        }
+
+        String username = userDetails.getUsername();
+        logger.debug("Loading dashboard for user: {}", username);
+
         try {
             DashboardDTO dashboard = dashboardService.getUserDashboardData(userDetails);
-            boolean hasMedications = dashboardService.hasMedications(userDetails);
+            boolean hasMedications = dashboard.isHasMedications();
 
-            logger.debug("Dashboard data retrieved successfully for user: {}", userDetails.getUsername());
+            logger.debug("Dashboard data retrieved successfully for user: {}", username);
             model.addAttribute("dashboard", dashboard);
             model.addAttribute("hasMedications", hasMedications);
 
             return "user/dashboard";
+        } catch (IllegalArgumentException e) {
+            logger.warn("Invalid request for dashboard: {}", e.getMessage());
+            model.addAttribute("error", "Invalid request: " + e.getMessage());
+            return "user/dashboard";
         } catch (Exception e) {
-            logger.error("Failed to load dashboard for user {}: {}", userDetails.getUsername(), e.getMessage(), e);
-            model.addAttribute("error", "Failed to load dashboard data");
+            logger.error("Failed to load dashboard for user {}: {}", username, e.getMessage(), e);
+            model.addAttribute("error", "Failed to load dashboard data. Please try again later.");
             return "user/dashboard";
         }
     }
@@ -312,6 +323,7 @@ public class UserController {
         try {
             model.addAttribute("medications",
                     medicationService.getUserMedications(userDetails.getUsername()));
+
             // Add the username to the model
             model.addAttribute("username", userDetails.getUsername());
             return "user/medication/list";

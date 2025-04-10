@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.*;
@@ -148,6 +149,40 @@ public class MedicationServiceImpl implements MedicationService {
     }
 
     /**
+     * Retrieves the days of medication intake for a specific medication.
+     *
+     * @param medicationId The ID of the medication to retrieve intake days for
+     * @return Set of days of the week when the medication should be taken
+     * @throws MedicationNotFoundException if no medication exists with the specified ID
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public Set<MedicationDTO.DayOfWeek> getMedicationIntakeDays(Long medicationId) {
+        logger.debug("Fetching intake days for medication ID: {}", medicationId);
+        long startTime = System.currentTimeMillis();
+
+        try {
+            MedicationModel medication = medicationRepository.findById(medicationId)
+                    .orElseThrow(() -> {
+                        logger.error("Medication not found with ID: {}", medicationId);
+                        return new MedicationNotFoundException("Medication not found with ID: " + medicationId);
+                    });
+
+            Set<MedicationDTO.DayOfWeek> days = medication.getDaysOfWeek().stream()
+                    .map(day -> MedicationDTO.DayOfWeek.valueOf(day.name()))
+                    .collect(Collectors.toSet());
+
+            logger.info("Successfully retrieved {} intake days for medication ID {} in {} ms",
+                    days.size(), medicationId, System.currentTimeMillis() - startTime);
+            return days;
+        } catch (Exception e) {
+            logOperationError("fetching intake days for medication", medicationId.toString(), e);
+            throw new MedicationNotFoundException("Failed to retrieve intake days for medication");
+        }
+    }
+
+
+    /**
      * Updates an existing medication.
      *
      * @param id The ID of the medication to update
@@ -212,6 +247,8 @@ public class MedicationServiceImpl implements MedicationService {
      * @return List of MedicationScheduleDTO objects representing the schedule
      * @throws MedicationScheduleException if there's an error generating the schedule
      */
+
+
     @Override
     @Transactional(readOnly = true)
     public List<MedicationScheduleDTO> getMedicationSchedule(String username) {
@@ -219,17 +256,58 @@ public class MedicationServiceImpl implements MedicationService {
         long startTime = System.currentTimeMillis();
 
         try {
-            List<MedicationModel> medications = medicationRepository.findByUserUsernameWithIntakeTimes(username);
-            logger.debug("Found {} medications for schedule", medications.size());
+            // 1. Fetch medications with all necessary relationships
+            List<MedicationModel> medications = medicationRepository.findByUserUsernameWithMedicationDetails(username);
+            logger.debug("Found {} medications for user {}", medications.size(), username);
 
+            if (medications.isEmpty()) {
+                logger.info("No medications found for user {}", username);
+                return Collections.emptyList();
+            }
+
+            // 2. Get current day of week
+            DayOfWeek currentDay = LocalDate.now().getDayOfWeek();
+            logger.debug("Current day of week: {}", currentDay);
+
+            // 3. Convert to your model's DayOfWeek enum
+            MedicationModel.DayOfWeek currentMedDay;
+            try {
+                currentMedDay = MedicationModel.DayOfWeek.valueOf(currentDay.name());
+                logger.debug("Converted to model day: {}", currentMedDay);
+            } catch (IllegalArgumentException e) {
+                logger.error("Day of week conversion failed for {}", currentDay.name(), e);
+                throw new MedicationScheduleException("Day of week conversion failed", e);
+            }
+
+            // 4. Process medications
             List<MedicationScheduleDTO> schedule = medications.stream()
                     .filter(Objects::nonNull)
-                    .filter(medication -> medication.getIntakeTimes() != null)
+                    .peek(med -> logger.trace("Processing medication: {}", med.getId()))
+                    .filter(medication -> {
+                        // Skip if no intake times
+                        if (medication.getIntakeTimes() == null || medication.getIntakeTimes().isEmpty()) {
+                            logger.debug("Medication {} skipped - no intake times", medication.getId());
+                            return false;
+                        }
+                        return true;
+                    })
+                    .filter(medication -> {
+                        // Include if no days specified OR current day matches
+                        if (medication.getDaysOfWeek() == null || medication.getDaysOfWeek().isEmpty()) {
+                            logger.trace("Medication {} included - no day restrictions", medication.getId());
+                            return true;
+                        }
+
+                        boolean matchesDay = medication.getDaysOfWeek().contains(currentMedDay);
+                        logger.trace("Medication {} day check: {}", medication.getId(), matchesDay);
+                        return matchesDay;
+                    })
                     .flatMap(this::processMedicationForSchedule)
                     .collect(Collectors.toList());
 
             logger.info("Generated schedule with {} entries for user {} in {} ms",
                     schedule.size(), username, System.currentTimeMillis() - startTime);
+
             return schedule;
         } catch (Exception e) {
             logger.error("Error generating schedule for user {}: {}", username, e.getMessage(), e);
@@ -532,6 +610,14 @@ public class MedicationServiceImpl implements MedicationService {
         Set<LocalTime> intakeTimes = medication.getIntakeTimesAsLocalTimes();
 
         try {
+            // Convert days of week if they exist
+            Set<MedicationDTO.DayOfWeek> daysOfWeek = null;
+            if (medication.getDaysOfWeek() != null && !medication.getDaysOfWeek().isEmpty()) {
+                daysOfWeek = medication.getDaysOfWeek().stream()
+                        .map(day -> MedicationDTO.DayOfWeek.valueOf(day.name()))
+                        .collect(Collectors.toSet());
+            }
+
             return MedicationDTO.builder()
                     .id(medication.getId())
                     .userId(medication.getUser() != null ? medication.getUser().getId() : null)
@@ -541,6 +627,7 @@ public class MedicationServiceImpl implements MedicationService {
                     .dosage(medication.getDosage())
                     .instructions(medication.getInstructions())
                     .intakeTimes(intakeTimes)
+                    .daysOfWeek(daysOfWeek)  // Add this line
                     .build();
         } catch (IllegalArgumentException e) {
             logger.error("Failed to convert urgency {} to DTO enum for medication ID: {}",
@@ -625,6 +712,8 @@ public class MedicationServiceImpl implements MedicationService {
     private void logOperationError(String operation, String identifier, Exception exception) {
         logger.error("Error {} {}: {}", operation, identifier, exception.getMessage(), exception);
     }
+
+
 
     private void processDaysOfWeek(MedicationDTO medicationDTO, MedicationModel medication) {
         medicationDTO.getDaysOfWeek().forEach(day ->

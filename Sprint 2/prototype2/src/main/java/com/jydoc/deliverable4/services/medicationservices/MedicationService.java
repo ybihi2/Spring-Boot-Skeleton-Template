@@ -3,9 +3,11 @@ package com.jydoc.deliverable4.services.medicationservices;
 import com.jydoc.deliverable4.dtos.MedicationDTO;
 import com.jydoc.deliverable4.dtos.MedicationScheduleDTO;
 import com.jydoc.deliverable4.dtos.RefillReminderDTO;
+import com.jydoc.deliverable4.security.Exceptions.MedicationNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Service interface for medication-related operations.
@@ -67,6 +69,15 @@ public interface MedicationService {
      * @throws com.jydoc.deliverable4.security.Exceptions.MedicationNotFoundException if medication with specified id doesn't exist
      */
     void deleteMedication(Long id);
+
+    /**
+     * Retrieves the days of medication intake for a specific medication.
+     *
+     * @param medicationId The ID of the medication to retrieve intake days for
+     * @return Set of days of the week when the medication should be taken
+     * @throws MedicationNotFoundException if no medication exists with the specified ID
+     */
+    Set<MedicationDTO.DayOfWeek> getMedicationIntakeDays(Long medicationId);
 
     /**
      * Retrieves the medication schedule for a specific user.

@@ -17,6 +17,10 @@ public interface MedicationRepository extends JpaRepository<MedicationModel, Lon
     List<MedicationModel> findByUserUsernameWithIntakeTimes(@Param("username") String username);
 
 
-
+    @Query("SELECT DISTINCT m FROM MedicationModel m " +
+            "LEFT JOIN FETCH m.intakeTimes " +
+            "LEFT JOIN FETCH m.daysOfWeek " +
+            "WHERE m.user.username = :username")
+    List<MedicationModel> findByUserUsernameWithMedicationDetails(@Param("username") String username);
 
 }

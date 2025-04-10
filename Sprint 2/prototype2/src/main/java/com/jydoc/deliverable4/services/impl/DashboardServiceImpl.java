@@ -2,6 +2,8 @@ package com.jydoc.deliverable4.services.impl;
 
 import com.jydoc.deliverable4.dtos.MedicationScheduleDTO;
 import com.jydoc.deliverable4.dtos.userdtos.DashboardDTO;
+import com.jydoc.deliverable4.model.MedicationModel;
+import com.jydoc.deliverable4.repositories.medicationrepositories.MedicationRepository;
 import com.jydoc.deliverable4.services.userservices.DashboardService;
 import com.jydoc.deliverable4.services.medicationservices.MedicationService;
 import org.slf4j.Logger;
@@ -23,14 +25,16 @@ public class DashboardServiceImpl implements DashboardService {
     private static final Logger logger = LoggerFactory.getLogger(DashboardServiceImpl.class);
 
     private final MedicationService medicationService;
+    private final MedicationRepository medicationRepository;
 
     /**
      * Constructs a new DashboardServiceImpl with the required MedicationService dependency.
      *
      * @param medicationService The medication service used to retrieve medication data
      */
-    public DashboardServiceImpl(MedicationService medicationService) {
+    public DashboardServiceImpl(MedicationService medicationService, MedicationRepository medicationRepository) {
         this.medicationService = medicationService;
+        this.medicationRepository = medicationRepository;
         logger.debug("DashboardServiceImpl initialized with MedicationService");
     }
 
@@ -75,7 +79,7 @@ public class DashboardServiceImpl implements DashboardService {
             dashboard.setActiveMedicationsCount(countActiveMedications(schedule));
             dashboard.setTodaysDosesCount(upcomingMeds.size());
             dashboard.setHealthMetricsCount(0); // Placeholder - would come from health service
-            dashboard.setHasMedications(!schedule.isEmpty());
+            dashboard.setHasMedications(hasMedications(userDetails));
             dashboard.setUpcomingMedications(upcomingMeds);
 
             // Generate medication alerts
@@ -142,6 +146,7 @@ public class DashboardServiceImpl implements DashboardService {
         dto.setDosage(scheduleDto.getDosage());
         dto.setNextDoseTime(scheduleDto.getScheduleTime().toString());
         dto.setTaken(scheduleDto.isTaken());
+
 
         logger.trace("Converted medication details: name={}, dosage={}, time={}, taken={}",
                 dto.getName(), dto.getDosage(), dto.getNextDoseTime(), dto.isTaken());
@@ -218,24 +223,11 @@ public class DashboardServiceImpl implements DashboardService {
      */
     @Override
     public boolean hasMedications(UserDetails userDetails) {
-        logger.debug("Checking if user has medications: {}",
-                userDetails != null ? userDetails.getUsername() : "null");
-
         if (userDetails == null) {
-            logger.error("UserDetails parameter cannot be null");
             throw new IllegalArgumentException("UserDetails cannot be null");
         }
-
-        try {
-            List<MedicationScheduleDTO> schedule = medicationService.getMedicationSchedule(userDetails.getUsername());
-            boolean hasMeds = schedule != null && !schedule.isEmpty();
-
-            logger.debug("User {} has medications: {}", userDetails.getUsername(), hasMeds);
-            return hasMeds;
-        } catch (Exception e) {
-            logger.error("Error checking medications for user {}: {}",
-                    userDetails.getUsername(), e.getMessage(), e);
-            return false;
-        }
+        List<MedicationModel> user = medicationRepository.findByUserUsernameWithMedicationDetails(userDetails.getUsername());
+        return user != null && !user.isEmpty();
     }
+
 }
