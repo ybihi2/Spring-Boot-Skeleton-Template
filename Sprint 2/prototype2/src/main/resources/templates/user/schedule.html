@@ -102,9 +102,9 @@
             border: 1px solid var(--border-color);
             background-color: #fff;
             transition: all 0.2s ease;
-            aspect-ratio: 1 / 1; /* Maintains square shape */
-            max-height: 200px; /* Optional max height with scrolling */
-            overflow-y: auto; /* Allows scrolling if content overflows */
+            aspect-ratio: 1 / 1;
+            max-height: 200px;
+            overflow-y: auto;
         }
 
         .calendar-day:hover {
@@ -224,7 +224,6 @@
             background-color: var(--primary-dark);
         }
 
-        /* Detailed View Styling */
         .medication-details {
             background-color: #fff;
             border: 1px solid var(--border-color);
@@ -483,10 +482,6 @@
                             </div>
                         </div>
                     </div>
-                    <div th:if="${not #lists.isEmpty(medications) and #lists.isEmpty(medications.?[daysOfWeek.contains(T(com.jydoc.deliverable4.dtos.MedicationDTO.DayOfWeek).fromDayOfMonth(currentDay, currentYear, currentMonthNumber))])}">
-                         class="text-muted text-center">
-                        No medications scheduled for today.
-                    </div>
                 </div>
             </div>
         </main>
@@ -518,4 +513,4 @@
     });
 </script>
 </body>
-</html>
+</html>7
