@@ -10,6 +10,10 @@ import javax.validation.constraints.NotNull;
 import java.time.LocalTime;
 import java.util.Set;
 
+/**
+ * Data Transfer Object for medication information.
+ * Includes validation annotations and builder customization.
+ */
 @Data
 @Builder
 @NoArgsConstructor
@@ -30,6 +34,9 @@ public class MedicationDTO {
     @NotNull(message = "Intake times must be specified")
     private Set<LocalTime> intakeTimes;
 
+    @NotNull(message = "Days of week must be specified")
+    private Set<DayOfWeek> daysOfWeek;
+
     // Additional recommended fields
     private String dosage;
     private String instructions;
@@ -38,7 +45,7 @@ public class MedicationDTO {
     public enum MedicationUrgency {
         URGENT,
         NONURGENT,
-        ROUTINE;  // Added more options
+        ROUTINE;
 
         public static MedicationUrgency fromString(String value) {
             if (value == null) {
@@ -53,15 +60,35 @@ public class MedicationDTO {
         }
     }
 
-    // Builder customization to handle null values
-    public static class MedicationDTOBuilder {
-        private Set<LocalTime> intakeTimes = new java.util.HashSet<>();
+    public enum DayOfWeek {
+        MONDAY,
+        TUESDAY,
+        WEDNESDAY,
+        THURSDAY,
+        FRIDAY,
+        SATURDAY,
+        SUNDAY;
 
-        public MedicationDTOBuilder intakeTimes(Set<LocalTime> intakeTimes) {
-            if (intakeTimes != null) {
-                this.intakeTimes.addAll(intakeTimes);
+        public static DayOfWeek fromString(String value) {
+            if (value == null) {
+                throw new IllegalArgumentException("Day of week cannot be null");
             }
-            return this;
+            try {
+                return DayOfWeek.valueOf(value.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException(
+                        "Invalid day of week. Must be one of: " +
+                                "MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY");
+            }
         }
+    }
+
+
+
+    /**
+     * Helper method to check if medication is active
+     */
+    public boolean isActive() {
+        return active != null && active;
     }
 }

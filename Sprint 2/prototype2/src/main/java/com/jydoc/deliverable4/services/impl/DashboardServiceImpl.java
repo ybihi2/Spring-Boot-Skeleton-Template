@@ -60,10 +60,6 @@ public class DashboardServiceImpl implements DashboardService {
         dashboard.setUsername(username);
 
         try {
-            // Set placeholder health conditions (would come from health service in production)
-            logger.debug("Setting placeholder health conditions for user: {}", username);
-            dashboard.setHealthConditions(Arrays.asList("Placeholder", "Placeholder"));
-
             // Retrieve and process medication schedule
             logger.debug("Retrieving medication schedule for user: {}", username);
             List<MedicationScheduleDTO> schedule = medicationService.getMedicationSchedule(username);

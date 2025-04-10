@@ -7,6 +7,7 @@ import com.jydoc.deliverable4.model.*;
 import com.jydoc.deliverable4.repositories.medicationrepositories.MedicationIntakeTimeRepository;
 import com.jydoc.deliverable4.repositories.medicationrepositories.MedicationRepository;
 import com.jydoc.deliverable4.repositories.userrepositories.UserRepository;
+import com.jydoc.deliverable4.security.Exceptions.MedicationCreationException;
 import com.jydoc.deliverable4.security.Exceptions.MedicationNotFoundException;
 import com.jydoc.deliverable4.security.Exceptions.MedicationScheduleException;
 import com.jydoc.deliverable4.security.Exceptions.UserNotFoundException;
@@ -111,19 +112,38 @@ public class MedicationServiceImpl implements MedicationService {
         long startTime = System.currentTimeMillis();
 
         try {
+            // Validate and get user
             UserModel user = validateAndGetUser(username);
-            MedicationDTO newMedicationDTO = buildMedicationDTO(medicationDTO, user);
-            MedicationModel medication = convertToEntity(newMedicationDTO, user);
 
-            processIntakeTimes(newMedicationDTO, medication);
+            // Set default values if not provided
+            if (medicationDTO.getActive() == null) {
+                medicationDTO.setActive(true);
+            }
+
+            // Validate days of week
+            if (medicationDTO.getDaysOfWeek() == null || medicationDTO.getDaysOfWeek().isEmpty()) {
+                throw new IllegalArgumentException("At least one day of week must be selected");
+            }
+
+            // Build and convert the medication
+            MedicationModel medication = convertToEntity(medicationDTO, user);
+
+            // Process intake times
+            processIntakeTimes(medicationDTO, medication);
+
+            // Process days of week
+            processDaysOfWeek(medicationDTO, medication);
+
+            // Save the medication
             MedicationModel savedMedication = saveMedication(medication);
 
+            // Convert to DTO and return
             MedicationDTO result = savedMedication.toDto();
             logOperationSuccess("created", savedMedication.getId(), username, startTime);
             return result;
         } catch (Exception e) {
             logOperationError("creating medication", username, e);
-            throw new RuntimeException("Failed to create medication", e);
+            throw new MedicationCreationException("Failed to create medication: " + e.getMessage(), e);
         }
     }
 
@@ -292,6 +312,10 @@ public class MedicationServiceImpl implements MedicationService {
                 .instructions(medicationDTO.getInstructions())
                 .intakeTimes(medicationDTO.getIntakeTimes() != null ?
                         new HashSet<>(medicationDTO.getIntakeTimes()) : new HashSet<>())
+                .daysOfWeek(medicationDTO.getDaysOfWeek() != null ?
+                        new HashSet<>(medicationDTO.getDaysOfWeek()) : new HashSet<>())
+                .active(medicationDTO.getActive() != null ?
+                        medicationDTO.getActive() : true) // Default to true if null
                 .build();
     }
 
@@ -601,4 +625,10 @@ public class MedicationServiceImpl implements MedicationService {
     private void logOperationError(String operation, String identifier, Exception exception) {
         logger.error("Error {} {}: {}", operation, identifier, exception.getMessage(), exception);
     }
+
+    private void processDaysOfWeek(MedicationDTO medicationDTO, MedicationModel medication) {
+        medicationDTO.getDaysOfWeek().forEach(day ->
+                medication.addDay(MedicationModel.DayOfWeek.valueOf(day.name())));
+    }
+
 }

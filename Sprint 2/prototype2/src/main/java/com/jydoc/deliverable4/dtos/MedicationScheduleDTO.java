@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalTime;
+import java.util.Set;
 
 @Data
 @Builder
@@ -13,12 +14,14 @@ import java.time.LocalTime;
 @AllArgsConstructor
 public class MedicationScheduleDTO {
 
-    private MedicationUrgency urgency;  // Using enum type
-
     public enum MedicationUrgency {
         URGENT, NONURGENT, ROUTINE
     }
 
+    // Days of the week enum
+    public enum DayOfWeek {
+        MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY
+    }
 
     private Long medicationId;
     private String medicationName;
@@ -27,6 +30,8 @@ public class MedicationScheduleDTO {
     private boolean isTaken;
     private String instructions;
     private String status; // "UPCOMING", "MISSED", "TAKEN", etc.
+    private MedicationUrgency urgency;
+    private Set<DayOfWeek> daysOfWeek; // Days when medication should be taken
 
     public String getFormattedTime() {
         return scheduleTime != null ? scheduleTime.toString() : "";
@@ -38,5 +43,16 @@ public class MedicationScheduleDTO {
             case "MISSED" -> "badge bg-danger";
             default -> "badge bg-warning text-dark";
         };
+    }
+
+    // Helper method to get days as comma-separated string
+    public String getDaysAsString() {
+        if (daysOfWeek == null || daysOfWeek.isEmpty()) {
+            return "Everyday";
+        }
+        return daysOfWeek.stream()
+                .map(Enum::name)
+                .reduce((a, b) -> a + ", " + b)
+                .orElse("");
     }
 }

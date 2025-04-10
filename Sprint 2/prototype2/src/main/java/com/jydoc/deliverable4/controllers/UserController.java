@@ -349,9 +349,20 @@ public class UserController {
     public String addMedication(
             @Valid @ModelAttribute("medicationDTO") MedicationDTO medicationDTO,
             BindingResult result,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @AuthenticationPrincipal UserDetails userDetails,
+            RedirectAttributes redirectAttributes) {
 
         logger.info("Attempting to add new medication for user: {}", userDetails.getUsername());
+
+        // Additional validation for days of week
+        if (medicationDTO.getDaysOfWeek() == null || medicationDTO.getDaysOfWeek().isEmpty()) {
+            result.rejectValue("daysOfWeek", "NotEmpty", "Please select at least one day");
+        }
+
+        // Additional validation for intake times
+        if (medicationDTO.getIntakeTimes() == null || medicationDTO.getIntakeTimes().isEmpty()) {
+            result.rejectValue("intakeTimes", "NotEmpty", "Please add at least one intake time");
+        }
 
         if (result.hasErrors()) {
             logger.warn("Medication validation failed with {} errors for user: {}",
@@ -360,12 +371,19 @@ public class UserController {
         }
 
         try {
+            // Set default active status if not provided
+            if (medicationDTO.getActive() == null) {
+                medicationDTO.setActive(true);
+            }
+
             medicationService.createMedication(medicationDTO, userDetails.getUsername());
             logger.info("Medication added successfully for user: {}", userDetails.getUsername());
-            return "redirect:/user/medication?success";
+            redirectAttributes.addFlashAttribute("success", "Medication added successfully");
+            return "redirect:/user/medication";
         } catch (Exception e) {
             logger.error("Failed to add medication for user {}: {}",
                     userDetails.getUsername(), e.getMessage(), e);
+            redirectAttributes.addFlashAttribute("error", "Failed to add medication: " + e.getMessage());
             return "user/medication/add";
         }
     }

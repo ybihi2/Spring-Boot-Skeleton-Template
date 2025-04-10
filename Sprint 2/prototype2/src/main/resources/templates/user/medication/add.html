@@ -247,6 +247,77 @@
                         </div>
                     </div>
 
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-calendar-day me-1"></i> Days to Take
+                        </label>
+                        <div th:if="${#fields.hasErrors('daysOfWeek')}" class="invalid-feedback d-block">
+                            <i class="fas fa-exclamation-circle me-1"></i>
+                            <span th:errors="*{daysOfWeek}">Validation error</span>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox"
+                                           th:field="*{daysOfWeek}"
+                                           th:value="MONDAY"
+                                           id="monday">
+                                    <label class="form-check-label" for="monday">Monday</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox"
+                                           th:field="*{daysOfWeek}"
+                                           th:value="TUESDAY"
+                                           id="tuesday">
+                                    <label class="form-check-label" for="tuesday">Tuesday</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox"
+                                           th:field="*{daysOfWeek}"
+                                           th:value="WEDNESDAY"
+                                           id="wednesday">
+                                    <label class="form-check-label" for="wednesday">Wednesday</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox"
+                                           th:field="*{daysOfWeek}"
+                                           th:value="THURSDAY"
+                                           id="thursday">
+                                    <label class="form-check-label" for="thursday">Thursday</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox"
+                                           th:field="*{daysOfWeek}"
+                                           th:value="FRIDAY"
+                                           id="friday">
+                                    <label class="form-check-label" for="friday">Friday</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox"
+                                           th:field="*{daysOfWeek}"
+                                           th:value="SATURDAY"
+                                           id="saturday">
+                                    <label class="form-check-label" for="saturday">Saturday</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox"
+                                           th:field="*{daysOfWeek}"
+                                           th:value="SUNDAY"
+                                           id="sunday">
+                                    <label class="form-check-label" for="sunday">Sunday</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox"
+                                           id="selectAllDays">
+                                    <label class="form-check-label" for="selectAllDays">Select All Days</label>
+                                </div>
+                            </div>
+                        </div>
+                        <small class="text-muted">Select all days when you need to take this medication</small>
+                    </div>
+
                     <!-- Intake Times -->
                     <div class="mb-4">
                         <label class="form-label fw-bold">
