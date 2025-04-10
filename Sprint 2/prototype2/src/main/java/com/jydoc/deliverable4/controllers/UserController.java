@@ -4,7 +4,6 @@ import com.jydoc.deliverable4.dtos.userdtos.DashboardDTO;
 import com.jydoc.deliverable4.dtos.MedicationDTO;
 import com.jydoc.deliverable4.dtos.userdtos.UserDTO;
 import com.jydoc.deliverable4.security.Exceptions.PasswordMismatchException;
-import com.jydoc.deliverable4.security.Exceptions.WeakPasswordException;
 import com.jydoc.deliverable4.services.userservices.DashboardService;
 import com.jydoc.deliverable4.services.medicationservices.MedicationService;
 import com.jydoc.deliverable4.services.userservices.UserService;
@@ -20,10 +19,12 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.validation.Valid;
+import java.time.LocalDate;
+import java.util.List;
 
 /**
  * Controller handling all user-related operations including profile management,
- * medication tracking, and dashboard display.
+ * medication tracking, dashboard display, and schedule viewing.
  *
  * <p>This controller serves as the main interface between the user-facing views
  * and backend services for user-specific operations.</p>
@@ -323,7 +324,6 @@ public class UserController {
         try {
             model.addAttribute("medications",
                     medicationService.getUserMedications(userDetails.getUsername()));
-
             // Add the username to the model
             model.addAttribute("username", userDetails.getUsername());
             return "user/medication/list";
@@ -506,5 +506,46 @@ public class UserController {
     public String showHealthMetrics() {
         logger.debug("Displaying health metrics view");
         return "user/health";
+    }
+
+    /**
+     * Displays the user's medication schedule for the current month.
+     *
+     * @param userDetails Authenticated user details
+     * @param model Spring MVC model for view data
+     * @return The schedule view template
+     */
+    @GetMapping("/schedule")
+    public String showSchedule(@AuthenticationPrincipal UserDetails userDetails, Model model) {
+        if (userDetails == null || userDetails.getUsername() == null) {
+            logger.error("Unauthenticated access attempt to schedule");
+            return "redirect:/login";
+        }
+
+        String username = userDetails.getUsername();
+        logger.debug("Loading medication schedule for user: {}", username);
+
+        try {
+            // Fetch all active medications for the user
+            List<MedicationDTO> medications = medicationService.getUserMedications(username);
+
+            // Add medications and username to the model
+            model.addAttribute("medications", medications);
+            model.addAttribute("username", username);
+
+            // Add current month, year, and day
+            LocalDate currentDate = LocalDate.now(); // April 10, 2025, based on your date
+            model.addAttribute("currentMonth", currentDate.getMonth().toString()); // e.g., "APRIL"
+            model.addAttribute("currentMonthNumber", currentDate.getMonthValue()); // e.g., 4
+            model.addAttribute("currentYear", currentDate.getYear()); // e.g., 2025
+            model.addAttribute("currentDay", currentDate.getDayOfMonth()); // e.g., 10
+
+            logger.info("Medication schedule loaded successfully for user: {}", username);
+            return "user/schedule";
+        } catch (Exception e) {
+            logger.error("Failed to load medication schedule for user {}: {}", username, e.getMessage(), e);
+            model.addAttribute("error", "Failed to load schedule data. Please try again later.");
+            return "user/schedule";
+        }
     }
 }

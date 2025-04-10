@@ -3,6 +3,7 @@ package com.jydoc.deliverable4.dtos;
 import lombok.*;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Set;
 
@@ -151,6 +152,34 @@ public class MedicationDTO {
          */
         DayOfWeek(String displayName) {
             this.displayName = displayName;
+        }
+
+        /**
+         * Converts a specific date (day, year, month) to the corresponding DayOfWeek.
+         *
+         * @param day The day of the month (1-31)
+         * @param year The year (e.g., 2025)
+         * @param month The month (1-12)
+         * @return The DayOfWeek enum value corresponding to the given date
+         * @throws IllegalArgumentException if the date is invalid
+         */
+        public static DayOfWeek fromDayOfMonth(Integer day, Integer year, Integer month) {
+            try {
+                LocalDate date = LocalDate.of(year, month, day);
+                java.time.DayOfWeek javaDayOfWeek = date.getDayOfWeek();
+                switch (javaDayOfWeek) {
+                    case MONDAY: return MONDAY;
+                    case TUESDAY: return TUESDAY;
+                    case WEDNESDAY: return WEDNESDAY;
+                    case THURSDAY: return THURSDAY;
+                    case FRIDAY: return FRIDAY;
+                    case SATURDAY: return SATURDAY;
+                    case SUNDAY: return SUNDAY;
+                    default: throw new IllegalArgumentException("Unknown day of week: " + javaDayOfWeek);
+                }
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Invalid date parameters: day=" + day + ", year=" + year + ", month=" + month, e);
+            }
         }
     }
 
